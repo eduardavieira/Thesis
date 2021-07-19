@@ -20,10 +20,8 @@ S4_neutral.csv,3112.000,0,2048
 S5_neutral.csv,3217.000,0,2048
 S6_neutral.csv,3161.000,0,2048
 S7_neutral.csv,1785.000,0,2048
-S8_neutral.csv,1041.000,0,2048
 S9_neutral.csv,2548.000,0,2048
 S10_neutral.csv,3177.000,0,2048
-S11_neutral.csv,2285.000,0,2048
 S12_neutral.csv,3379.000,0,2048
 S13_neutral.csv,2592.000,0,2048
 S14_neutral.csv,3329.000,0,2048
@@ -66,13 +64,10 @@ S6_stress_I.csv,3098.000,1,2048
 S6_stress_T.csv,2144.000,1,2048
 S7_stress_T.csv,2377.000,1,2048
 S7_stress_I.csv,3290.000,1,2048
-S8_stress_I.csv,1962.000,1,2048
-S8_stress_T.csv,2177.000,1,2048
 S9_stress_I.csv,2906.000,1,2048
 S9_stress_T.csv,2190.000,1,2048
 S10_stress_I.csv,2426.000,1,2048
 S10_stress_T.csv,2349.000,1,2048
-S11_stress_I.csv,918.000,1,2048
 S12_stress_I.csv,3094.000,1,2048
 S12_stress_T.csv,2126.000,1,2048
 S13_stress_I.csv,2748.000,1,2048
