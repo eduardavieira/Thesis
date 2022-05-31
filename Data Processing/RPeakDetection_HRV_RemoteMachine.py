@@ -29,7 +29,7 @@ from csv import reader
 hrv_csv_name = '/home/gsd/hrv_data/ProcessedECGData.csv'
 
 with open(hrv_csv_name, 'a', encoding='UTF8', newline='') as f:
-    header = ['file', 'label', 'rr_mean', 'hr_mean', 'sdnn', 'rmssd', 'pnn50']
+    header = ['file','label','hr_mean','nni_mean','nni_min','nni_max','sdnn','sdnn_index','rmssd','nn50','pnn50','LF/HF ratio','Total power']
     writer = csv.writer(f)
     # write the header
     writer.writerow(header)
@@ -161,33 +161,35 @@ with open('/home/gsd/datasets/time_duration.csv', 'r') as read_obj:
 
             print("     Doing split ",n," of ",x)
 
-            #Calculating HRV based on rPeaks calculated before
-            hrv1 = hrv(rpeaks=(rPeaks[n]), sampling_rate=fs, show= False, plot_tachogram= False, plot_ecg= False)
-
-            #Calculating HRV with filtered ecg, default parameters
-            #hrv1 = hrv(signal=(split_values[n]), sampling_rate=fs,  show= False, plot_tachogram= False, plot_ecg= False)
-
-
             #Calculating RR interval
             rr_interval = detectrr(rPeaks[n])
 
-            t=0
-            for g in range (len(rr_interval)):
-                t = rr_interval[g] + t
-                g = g + 1
-            rr_mean = t / (len(rr_interval))
-
+            #Excluding falsed of missed R-peaks (in the case of rr_intervals < 0.5 or rr_intervals > 1.2 s)
+            for g in rr_interval:
+                if (g < 0.5 or g > 1.2):
+                    rr_interval.remove(g)
+                    
+            #1. Calculating HRV based on NN (RR) intervals calculated before
+            hrv1 = hrv(nni=rr_interval, sampling_rate=fs, show= False, plot_tachogram= False, plot_ecg= False)
+            
+            #2. Calculating HRV with filtered ecg, default parameters
+            #hrv1 = hrv(signal=(split_values[n]), sampling_rate=fs,  show= False, plot_tachogram= False, plot_ecg= False)
 
             # the variable `hrv` is classbiosppy.utils.ReturnTuple(values, names=None), must be converted to ordered dictionary
             hrv_dic = hrv1.as_dict()
             hr_mean = hrv_dic["hr_mean"]
+            nni_mean = hrv_dic["nni_mean"]
+            nni_min = hrv_dic["nni_min"]
+            nni_max = hrv_dic["nni_max"]
             sdnn = hrv_dic["sdnn"]
+            sdnn_index = hrv_dic["sdnn_index"]
             rmssd = hrv_dic["rmssd"]
+            nn50 = hrv_dic["nn50"]
             pnn50 = hrv_dic["pnn50"]
+            X_ratio = hrv_dic["fft_ratio"]
+            X_total= hrv_dic["fft_total"]
 
-            #col1 = (n + 1) * time_frame
-
-            data = [file, label, rr_mean , hr_mean, sdnn, rmssd, pnn50]
+            data = [file, label, hr_mean, nni_mean,nni_min, nni_max, sdnn, sdnn_index, rmssd, nn50, pnn50, X_ratio, X_total]
 
             #open file in append 'a' mode
             with open(hrv_csv_name, 'a', encoding='UTF8', newline='') as f:
@@ -195,6 +197,4 @@ with open('/home/gsd/datasets/time_duration.csv', 'r') as read_obj:
                 # write the data
                 writer.writerow(data)
 
-            del hrv1 #cleaning the variable
-        
-
+            del hrv1 #cleaning the variable       
