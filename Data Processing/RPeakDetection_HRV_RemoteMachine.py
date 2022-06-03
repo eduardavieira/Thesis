@@ -23,6 +23,7 @@ from pyhrv.hrv import hrv
 import csv
 from csv import reader
 
+from datetime import datetime
 
 # Creating the final .csv file with all the information
 
@@ -118,6 +119,7 @@ path = "/home/gsd/datasets/"
 with open('/home/gsd/datasets/time_duration.csv', 'r') as read_obj:
     csv_reader = reader(read_obj)
     
+    start_time = datetime.now()
     for row in csv_reader:
         
         file = row[0]
@@ -132,6 +134,7 @@ with open('/home/gsd/datasets/time_duration.csv', 'r') as read_obj:
         
         # Join various path components
         final_path = os.path.join(path, file)
+        
         
         print("Reading the file: ", file)
         
@@ -197,4 +200,7 @@ with open('/home/gsd/datasets/time_duration.csv', 'r') as read_obj:
                 # write the data
                 writer.writerow(data)
 
-            del hrv1 #cleaning the variable       
+            del hrv1 #cleaning the variable
+            
+        end_time = datetime.now()
+        print('Elapsed Time: {}'.format(end_time - start_time))       
