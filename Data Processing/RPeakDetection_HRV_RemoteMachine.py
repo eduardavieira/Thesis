@@ -25,16 +25,18 @@ from csv import reader
 
 from datetime import datetime
 
+import time
+
 # Creating the final .csv file with all the information
 
 hrv_csv_name = '/home/gsd/hrv_data/ProcessedECGData.csv'
-
+'''
 with open(hrv_csv_name, 'a', encoding='UTF8', newline='') as f:
     header = ['file','label','hr_mean','nni_mean','nni_min','nni_max','sdnn','sdnn_index','rmssd','nn50','pnn50','LF/HF ratio','Total power']
     writer = csv.writer(f)
     # write the header
     writer.writerow(header)
-
+'''
 
 def split_ECG(time_frame, time, samples):
     
@@ -120,6 +122,7 @@ with open('/home/gsd/datasets/time_duration.csv', 'r') as read_obj:
     csv_reader = reader(read_obj)
     
     start_time = datetime.now()
+    start_time_seconds = time.time()
     for row in csv_reader:
         
         file = row[0]
@@ -203,4 +206,13 @@ with open('/home/gsd/datasets/time_duration.csv', 'r') as read_obj:
             del hrv1 #cleaning the variable
             
         end_time = datetime.now()
-        print('Elapsed Time: {}'.format(end_time - start_time))       
+        print('Elapsed Time: {}'.format(end_time - start_time))
+        
+        #Limiting the running time so that the machines do not turn off
+        
+        executing_time_allowed = 2400 #40 min -> 2400 s
+	sleeping_time = 600 #10 min -> 600 s
+	elapsed_time = (time.time() - start_time_seconds)
+	if(elapsed_time > executing_time_allowed): 
+	    print(" ------------Sleeping------------ for % second(s)" % sleeping_time) 
+	    time.sleep(sleeping_time)
