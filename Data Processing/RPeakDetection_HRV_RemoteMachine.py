@@ -32,7 +32,7 @@ import time
 hrv_csv_name = '/home/gsd/hrv_data/ProcessedECGData.csv'
 '''
 with open(hrv_csv_name, 'a', encoding='UTF8', newline='') as f:
-    header = ['file','label','hr_mean','nni_mean','nni_min','nni_max','sdnn','sdnn_index','rmssd','nn50','pnn50','LF/HF ratio','Total power']
+    header = ['file','label','hr_mean','nni_mean','nni_min','nni_max','sdnn','rmssd','nn50','pnn50','LF/HF ratio','Total power']
     writer = csv.writer(f)
     # write the header
     writer.writerow(header)
@@ -188,14 +188,13 @@ with open('/home/gsd/datasets/time_duration.csv', 'r') as read_obj:
             nni_min = hrv_dic["nni_min"]
             nni_max = hrv_dic["nni_max"]
             sdnn = hrv_dic["sdnn"]
-            sdnn_index = hrv_dic["sdnn_index"]
             rmssd = hrv_dic["rmssd"]
             nn50 = hrv_dic["nn50"]
             pnn50 = hrv_dic["pnn50"]
             X_ratio = hrv_dic["fft_ratio"]
             X_total= hrv_dic["fft_total"]
 
-            data = [file, label, hr_mean, nni_mean,nni_min, nni_max, sdnn, sdnn_index, rmssd, nn50, pnn50, X_ratio, X_total]
+            data = [file, label, hr_mean, nni_mean,nni_min, nni_max, sdnn, rmssd, nn50, pnn50, X_ratio, X_total]
 
             #open file in append 'a' mode
             with open(hrv_csv_name, 'a', encoding='UTF8', newline='') as f:
