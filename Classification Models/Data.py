@@ -3,7 +3,7 @@ import numpy as np
 
 def load_features(path):
 	x_features, y_label, numeric_features = load_dataset(path)
-	x_features_normal = data_normalization(numeric_features)
+	x_features_normal = data_normalization(path, numeric_features, x_features) #TODOEduarda ReviewThis
 	
 	return x_features_normal, y_label #Atualizar com o data augmentation
 	
@@ -14,6 +14,7 @@ def load_features(path):
 def load_dataset(path):
 	hrv_data_path = path
 	numeric_features = ['hr_mean','nni_mean','nni_min','nni_max','sdnn','rmssd','nn50','pnn50','LF/HF ratio','Total power']
+	#print(hrv_data_path, flush=True)
 	data = pd.read_csv(hrv_data_path)
 	#print(data)
 
@@ -30,7 +31,7 @@ def load_dataset(path):
 
 ''' ************************************** DATA NORMALIZATION *************************************************'''
 
-def data_normalization(numeric_features):
+def data_normalization(hrv_data_path, numeric_features, x_features):
 	desc = pd.read_csv(hrv_data_path)[numeric_features].describe()
 	desc
 	mean = np.array(desc.T['mean'])
