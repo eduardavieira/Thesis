@@ -8,7 +8,7 @@ from tensorflow.keras.optimizers import Adam, SGD #Adagrad, Adadelta, Adamax, Na
 if __name__ == '__main__':
     #Dataset Info
     #path = "/home/gsd/hrv_data/ProcessedECGData.csv"
-    path = "/media/eduarda/Seagate/TESE/hrv_data/ProcessedECGData.csv"
+    path = "/home/eduarda/Desktop/ProcessedECGData.csv"
     x_features_normal, y_label = load_features(path)
     
     #Model used
@@ -30,5 +30,5 @@ if __name__ == '__main__':
     metrics = ['accuracy', tf.keras.metrics.Precision(name="precision"), tf.keras.metrics.Recall(name='recall')]
     loss = "binary_crossentropy"
     model.compile(optimizer=opt, loss=loss, metrics=metrics)
-    model.train_evalute_model(model, batch_size, num_epochs, x_train, x_test, y_train, y_test) #TODOEduarda 'Sequential' object has no attribute 'train_evalute_model'
+    model.fit(model, batch_size, num_epochs, x_train, x_test, y_train, y_test) #TODOEduarda 'Sequential' object has no attribute 'train_evalute_model'/ etc
     model.summary()

@@ -1,10 +1,11 @@
-from sklearn.model_selection import train_test_split
-
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Conv1D, BatchNormalization, Dropout, Flatten, LSTM
+import tensorflow
+#import keras
+from tensorflow import keras 
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Conv1D, BatchNormalization, Dropout, Flatten, LSTM
 import tensorflow as tf
 from livelossplot import PlotLossesKeras
+from sklearn.model_selection import train_test_split
 
 def build_model(model_name):
     if model_name == "model1":
@@ -25,7 +26,7 @@ def train_evalute_model(self, model, batch_size, num_epochs, x_train, x_test, y_
 '''      *********************      MODELS            *****************'''
     
 def model3(): #CNN
-    model = Sequential()
+    model = tensorflow.keras.Sequential()
     model.add(Conv1D(filters=64, kernel_size=2, activation='relu', padding='same'))
     model.add(MaxPooling1D(pool_size=1))
     model.add(Dropout(0.5))
@@ -37,7 +38,7 @@ def model3(): #CNN
 
 
 def model1(): #CNN
-    model = Sequential()
+    model = tensorflow.keras.Sequential()
     model.add(Conv1D(128, kernel_size=2, activation='relu', padding='same'))
     model.add(BatchNormalization())
     model.add(Dropout(0.5))
@@ -53,7 +54,7 @@ def model1(): #CNN
 
 
 def model2(): #LSTM
-    model = Sequential()
+    model = tensorflow.keras.Sequential()
     model.add(LSTM(32, activation='relu'))
     model.add(BatchNormalization())
     model.add(Dropout(0.5))
