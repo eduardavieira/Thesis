@@ -14,7 +14,7 @@ def build_model(model_name):
         model = model2()
     return model
 
-def train_evalute_model(self, model, batch_size, num_epochs, x_train, x_test, y_train, y_test):
+def train_evalute_model(model, batch_size, num_epochs, x_train, x_test, y_train, y_test):
     history = model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=num_epochs, batch_size=batch_size, verbose=0, callbacks=[PlotLossesKeras()])
     #model.save_weights(("{}/{}_{}_{}").format(os.path.join(self.save_path, "WEIGHTS"), mode, prefix, "finalw.h5"))
     test_loss, test_accuracy = model.evaluate(x_test, y_test, verbose=0)

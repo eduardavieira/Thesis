@@ -5,7 +5,7 @@ def load_features(path):
 	x_features, y_label, numeric_features = load_dataset(path)
 	x_features_normal = data_normalization(path, numeric_features, x_features) #TODOEduarda ReviewThis
 	
-	return x_features_normal, y_label #Atualizar com o data augmentation
+	return x_features_normal, y_label #TODOEduarda Atualizar com o data augmentation
 	
 
 ''' ************************************** DATASET LOADING *************************************************'''
@@ -25,8 +25,8 @@ def load_dataset(path):
 
 	x_features = x_features_df.to_numpy()
 	y_label = y_label_df.to_numpy()
-	print(x_features)
-	print(y_label)
+	#print(x_features[:5])
+	#print(y_label)
 	return x_features, y_label, numeric_features
 
 ''' ************************************** DATA NORMALIZATION *************************************************'''
