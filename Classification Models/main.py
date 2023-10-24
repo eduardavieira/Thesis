@@ -32,5 +32,5 @@ if __name__ == '__main__':
     model.compile(optimizer=opt, loss=loss, metrics=metrics)
     nrows, ncols = x_train.shape # (entries,features)
     x_train_reshape = x_train.reshape(nrows, ncols, 1) # (features, entries, 1)
-    #train_evalute_model(model, batch_size, num_epochs, x_train_reshape, x_test, y_train, y_test) #TODOEduarda 'Sequential' object has no attribute 'train_evalute_model'/ etc
-    #model.summary()
+    train_evalute_model(model, batch_size, num_epochs, x_train_reshape, x_test, y_train, y_test)
+    model.summary()
