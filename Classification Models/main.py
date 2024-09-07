@@ -15,8 +15,8 @@ if __name__ == '__main__':
     model_name = "model1" #model1, model2, model3, weightsAlreadyCalculated
     
     #Train Settings
-    batch_size = 64
-    num_epochs = 100
+    batch_size = 100
+    num_epochs = 4000 #Test Accuracy 0.4431818127632141
             
     #Spliting Data
     x_train, x_test, y_train, y_test = train_test_split(x_features_normal, y_label, test_size = 0.2) # para test_size = 0.2 há 5277 entradas para treino e 1321 para teste

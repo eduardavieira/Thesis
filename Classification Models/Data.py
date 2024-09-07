@@ -44,3 +44,6 @@ def data_normalization(hrv_data_path, numeric_features, x_features):
 
 ''' ************************************** DATA AUGMENTATION *************************************************'''
 #The Random Over Sampling technique was used
+#from imblearn.over_sampling import RandomOverSampler
+#ros = RandomOverSampler(random_state=0)
+#X_train_ros, y_train_ros = ros.fit_resample(X_train_pca, y_train)
