@@ -1,37 +1,59 @@
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 
 def load_features(path):
 	x_features, y_label, numeric_features = load_dataset(path)
-	x_features_normal = data_normalization(path, numeric_features, x_features) #TODOEduarda ReviewThis
+	#x_features_normal = data_normalization(path, numeric_features, x_features) #Can't normalize here
 	
-	return x_features_normal, y_label #TODOEduarda Atualizar com o data augmentation
+	return x_features, y_label, numeric_features #TODOEduarda Atualizar com o data augmentation
 	
 
 ''' ************************************** DATASET LOADING *************************************************'''
 # Data Upload based on https://www.tensorflow.org/tutorials/load_data/csv
 
 def load_dataset(path):
-	hrv_data_path = path
-	numeric_features = ['hr_mean','nni_mean','nni_min','nni_max','sdnn','rmssd','nn50','pnn50','LF/HF ratio','Total power']
-	#print(hrv_data_path, flush=True)
-	data = pd.read_csv(hrv_data_path)
-	#print(data)
-
-	x_features_df = data.iloc[:,2:12]
-	#print(x)
-	y_label_df = data.iloc[:,1]
-	#print(y)
-
-	x_features = x_features_df.to_numpy()
-	y_label = y_label_df.to_numpy()
-	#print(x_features[:5])
-	#print(y_label)
-	return x_features, y_label, numeric_features
+    """Load dataset from CSV and clean NaN values"""
+    numeric_features = ['hr_mean','nni_mean','nni_min','nni_max','sdnn',
+                       'rmssd','nn50','pnn50','LF/HF ratio','Total power']
+    
+    data = pd.read_csv(path)
+    
+    print(f"Original data shape: {data.shape}")
+    
+    # Check for NaN in labels
+    label_col = data.iloc[:,1]
+    nan_labels = label_col.isna().sum()
+    print(f"Rows with NaN labels: {nan_labels}")
+    
+    # Remove rows with NaN labels
+    data = data.dropna(subset=[data.columns[1]])  # Drop rows where label is NaN
+    
+    # Check for NaN in features
+    feature_cols = data.iloc[:,2:12]
+    nan_features = feature_cols.isna().any(axis=1).sum()
+    print(f"Rows with NaN features: {nan_features}")
+    
+    # Remove rows with NaN features
+    data = data.dropna(subset=data.columns[2:12])
+    
+    print(f"Clean data shape: {data.shape}\n")
+    
+    x_features_df = data.iloc[:,2:12]
+    y_label_df = data.iloc[:,1]
+    
+    x_features = x_features_df.to_numpy()
+    y_label = y_label_df.to_numpy()
+    
+    # Final verification
+    assert not np.isnan(x_features).any(), "Still have NaN in features!"
+    assert not np.isnan(y_label).any(), "Still have NaN in labels!"
+    
+    return x_features, y_label, numeric_features
 
 ''' ************************************** DATA NORMALIZATION *************************************************'''
 
-def data_normalization(hrv_data_path, numeric_features, x_features):
+def data_normalization(hrv_data_path, numeric_features, x_features): 
 	desc = pd.read_csv(hrv_data_path)[numeric_features].describe()
 	desc
 	mean = np.array(desc.T['mean'])
@@ -40,6 +62,22 @@ def data_normalization(hrv_data_path, numeric_features, x_features):
 	x_features_normal = (x_features-mean)/std
 	#print(x_features_normal)
 	return x_features_normal
+
+def normalize_data(x_train, x_test): #normalize using only training statistics, ONLY!!
+    """Normalize using only training statistics"""
+    scaler = StandardScaler()
+    x_train_norm = scaler.fit_transform(x_train)
+    x_test_norm = scaler.transform(x_test)
+    
+    print(f"Normalization:")
+    print(f"  Train range: [{np.min(x_train_norm):.2f}, {np.max(x_train_norm):.2f}]")
+    print(f"  Test range: [{np.min(x_test_norm):.2f}, {np.max(x_test_norm):.2f}]")
+    
+    # Check for problems
+    assert not np.isnan(x_train_norm).any(), "NaN in training data!"
+    assert not np.isnan(x_test_norm).any(), "NaN in test data!"
+    
+    return x_train_norm, x_test_norm
 
 
 ''' ************************************** DATA AUGMENTATION *************************************************'''
