@@ -14,7 +14,6 @@ if __name__ == '__main__':
     print(f"Loaded data: {x_features.shape}")
     print(f"Features: {numeric_features}")
     print(f"Unique labels: {np.unique(y_label)}")
-    #print(f"Label distribution: {np.bincount(y_label.astype(int))}\n")
 
     
     # Spliting Data
@@ -26,18 +25,12 @@ if __name__ == '__main__':
         stratify=y_label
     )
 
-    #Spliting Data
-    #x_train, x_test, y_train, y_test = train_test_split(x_features_normal, y_label, test_size = 0.2) # para test_size = 0.2 há 5277 entradas para treino e 1321 para teste
-
     print(f"After split:")
     print(f"  Train: {x_train.shape}")
     print(f"  Test: {x_test.shape}\n")
 
     # Normalize
     x_train_norm, x_test_norm = normalize_data(x_train, x_test)
-
-
-    ''' ************************************** logica do claude *************************************************'''
 
     # Reshape for Conv1D/LSTM (samples, timesteps, features)
     nrows_train, ncols = x_train_norm.shape
@@ -51,12 +44,12 @@ if __name__ == '__main__':
     print(f"  Test: {x_test_reshape.shape}\n")
     
     # Build model
-    model_name = "model2_new"  # Try "model1_new", "model2_new", or "model3_new"
+    model_name = "model2_new"  # Try "model1_new", "model2_new", or "model3_new", "model2_bidirectional",train_and_ensemble, model4_cnn_lstm_hybrid, model2_simple
     input_shape = (ncols, 1)  # (10, 1) for your 10 features
     model = build_model(model_name, input_shape)
     
     # Compile with Adam optimizer
-    opt = Adam(learning_rate=0.001, clipnorm=1.0)
+    opt = Adam(learning_rate=0.001, clipnorm=0.5)
     
     metrics = [
         'accuracy',
@@ -69,29 +62,12 @@ if __name__ == '__main__':
     print(f"Using {model_name}:")
     model.summary()
     print()
-
-
-    ''' ************************************** logica do claude *************************************************'''
     
     #Train Settings
     batch_size = 32
-    num_epochs = 100 #Test Accuracy 0.4431818127632141
-            
-    #Create Model
-    #model = build_model(model_name)
-    
-    #Train Model
-    #opt = SGD(learning_rate=0.0001, decay=0.005, momentum=0.9, nesterov=True) #decay is deprecated in the new Keras optimizer
-    
-#opt = SGD(learning_rate=0.0001, momentum=0.9, nesterov=True)
-#   metrics = ['accuracy', tf.keras.metrics.Precision(name="precision"), tf.keras.metrics.Recall(name='recall')]
-#   loss = "binary_crossentropy"
-#    model.compile(optimizer=opt, loss=loss, metrics=metrics)
-#    nrows, ncols = x_train.shape # (entries,features)
-#    x_train_reshape = x_train.reshape(nrows, ncols, 1) # (features, entries, 1)
-#train_evalute_model(model, batch_size, num_epochs, x_train_reshape, x_test, y_train, y_test)
-#    model.summary()
+    num_epochs = 100
 
+    #TODOEduarda este history é só para o modelo 2
     history = train_evaluate_model(
         model, 
         batch_size, 
@@ -101,3 +77,21 @@ if __name__ == '__main__':
         y_train, 
         y_test
     )
+    '''
+    print(f"\nReshaped:")
+    print(f"  Train: {x_train_reshape.shape}")
+    print(f"  Test: {x_test_reshape.shape}\n")
+    
+    input_shape = (x_train_reshape.shape[1], 1)
+    
+    # Train ensemble
+    trained_models, all_results, best_acc, best_f1 = train_and_ensemble(
+        x_train_reshape,
+        x_test_reshape,
+        y_train,
+        y_test,
+        input_shape
+    )
+    '''
+
+

@@ -14,8 +14,7 @@ def load_features(path):
 
 def load_dataset(path):
     """Load dataset from CSV and clean NaN values"""
-    numeric_features = ['hr_mean','nni_mean','nni_min','nni_max','sdnn',
-                       'rmssd','nn50','pnn50','LF/HF ratio','Total power']
+    numeric_features = ['hr_mean','nni_mean','nni_min','nni_max','sdnn','rmssd','nn50','pnn50','LF/HF ratio','Total power']
     
     data = pd.read_csv(path)
     
@@ -63,17 +62,40 @@ def data_normalization(hrv_data_path, numeric_features, x_features):
 	#print(x_features_normal)
 	return x_features_normal
 
-def normalize_data(x_train, x_test): #normalize using only training statistics, ONLY!!
-    """Normalize using only training statistics"""
-    scaler = StandardScaler()
-    x_train_norm = scaler.fit_transform(x_train)
-    x_test_norm = scaler.transform(x_test)
+def normalize_data(x_train, x_test):
+    """Normalize with outlier handling"""
     
-    print(f"Normalization:")
+    # Option A: Remove outliers BEFORE normalization
+    print("\nOutlier Detection:")
+    
+    # Find outliers using IQR method
+    Q1 = np.percentile(x_train, 25, axis=0)
+    Q3 = np.percentile(x_train, 75, axis=0)
+    IQR = Q3 - Q1
+    
+    lower_bound = Q1 - 3 * IQR
+    upper_bound = Q3 + 3 * IQR
+    
+    # Clip to these bounds
+    x_train_clipped = np.clip(x_train, lower_bound, upper_bound)
+    x_test_clipped = np.clip(x_test, lower_bound, upper_bound)
+    
+    print(f"  Original train range: [{np.min(x_train):.2f}, {np.max(x_train):.2f}]")
+    print(f"  Clipped train range: [{np.min(x_train_clipped):.2f}, {np.max(x_train_clipped):.2f}]")
+    
+    # NOW normalize
+    scaler = StandardScaler()
+    x_train_norm = scaler.fit_transform(x_train_clipped)
+    x_test_norm = scaler.transform(x_test_clipped)
+    
+    print(f"\nAfter normalization:")
     print(f"  Train range: [{np.min(x_train_norm):.2f}, {np.max(x_train_norm):.2f}]")
     print(f"  Test range: [{np.min(x_test_norm):.2f}, {np.max(x_test_norm):.2f}]")
     
-    # Check for problems
+    # Final safety clip
+    x_train_norm = np.clip(x_train_norm, -5, 5)
+    x_test_norm = np.clip(x_test_norm, -5, 5)
+    
     assert not np.isnan(x_train_norm).any(), "NaN in training data!"
     assert not np.isnan(x_test_norm).any(), "NaN in test data!"
     
