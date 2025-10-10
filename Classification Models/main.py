@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 from tensorflow.keras.optimizers import Adam, SGD #Adagrad, Adadelta, Adamax, Nadam
+import time
 
 if __name__ == '__main__':
     #Dataset Info
@@ -44,7 +45,7 @@ if __name__ == '__main__':
     print(f"  Test: {x_test_reshape.shape}\n")
     
     # Build model
-    model_name = "model2_new"  # Try "model1_new", "model2_new", or "model3_new", "model2_bidirectional",train_and_ensemble, model4_cnn_lstm_hybrid, model2_simple
+    model_name = "model4_cnn_lstm_hybrid"  # Try "model1_new", "model2_new", or "model3_new", "model2_bidirectional",train_and_ensemble, model4_cnn_lstm_hybrid, model2_simple
     input_shape = (ncols, 1)  # (10, 1) for your 10 features
     model = build_model(model_name, input_shape)
     
@@ -68,6 +69,10 @@ if __name__ == '__main__':
     num_epochs = 100
 
     #TODOEduarda este history é só para o modelo 2
+    # Start timing
+    print("Starting timing...\n")
+    training_start = time.time()
+
     history = train_evaluate_model(
         model, 
         batch_size, 
@@ -77,6 +82,9 @@ if __name__ == '__main__':
         y_train, 
         y_test
     )
+    training_time = time.time() - training_start
+    print(f"  Total time:      {training_time:.2f}s ({training_time/60:.2f} min)")
+
     '''
     print(f"\nReshaped:")
     print(f"  Train: {x_train_reshape.shape}")
