@@ -14,7 +14,7 @@ def load_features(path):
 
 def load_dataset(path):
     """Load dataset from CSV and clean NaN values"""
-    numeric_features = ['hr_mean','nni_mean','nni_min','nni_max','sdnn','rmssd','nn50','pnn50','LF/HF ratio','Total power']
+    numeric_features = ['hr_mean','nni_mean','nni_min','nni_max','sdnn','rmssd','nn50','pnn50']
     
     data = pd.read_csv(path)
     

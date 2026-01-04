@@ -45,34 +45,35 @@ if __name__ == '__main__':
     print(f"  Test: {x_test_reshape.shape}\n")
     
     # Build model
-    model_name = "model4_cnn_lstm_hybrid"  # Try "model1_new", "model2_new", or "model3_new", "model2_bidirectional",train_and_ensemble, model4_cnn_lstm_hybrid, model2_simple
-    input_shape = (ncols, 1)  # (10, 1) for your 10 features
+    model_name = "model5_cnn_transformer_hybrid_v2"
+    input_shape = (ncols, 1) # (8, 1) for 8 features, 1 channel
     model = build_model(model_name, input_shape)
-    
+
     # Compile with Adam optimizer
-    opt = Adam(learning_rate=0.001, clipnorm=0.5)
-    
+    #opt = Adam(learning_rate=0.0001, clipnorm=0.5) #for cnn/lstm models
+    opt = Adam(learning_rate=0.0001, clipnorm=1.0)  #FOR THE TRANSFORMERS ONLY
+
     metrics = [
         'accuracy',
         tensorflow.keras.metrics.Precision(name="precision"),
         tensorflow.keras.metrics.Recall(name='recall')
     ]
-    
+
     model.compile(optimizer=opt, loss="binary_crossentropy", metrics=metrics)
-    
+
     print(f"Using {model_name}:")
     model.summary()
     print()
-    
-    #Train Settings
-    batch_size = 32
-    num_epochs = 100
 
-    #TODOEduarda este history é só para o modelo 2
+    # Training settings
+    batch_size = 32  # Standard batch size
+    num_epochs = 150  # More epochs. Use 100 for cnn/lstm models
+
     # Start timing
     print("Starting timing...\n")
     training_start = time.time()
 
+    # Train (with balanced class weights, no boost)
     history = train_evaluate_model(
         model, 
         batch_size, 
@@ -82,6 +83,7 @@ if __name__ == '__main__':
         y_train, 
         y_test
     )
+
     training_time = time.time() - training_start
     print(f"  Total time:      {training_time:.2f}s ({training_time/60:.2f} min)")
 

@@ -36,6 +36,8 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.layers import Bidirectional
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import numpy as np
+from tensorflow.keras.layers import *
+from tensorflow.keras.models import Model
 
 def build_model(model_name, input_shape):
     try:
@@ -77,20 +79,24 @@ def train_evaluate_model(model, batch_size, num_epochs, x_train, x_test, y_train
         y=y_train
     )
     class_weight_dict = dict(enumerate(class_weights))
+    #class_weight_dict[1] *= 1.5  # Boost stress detection
     print(f"Class weights: {class_weight_dict}\n")
+
+    original_stress_weight = class_weight_dict.get(1, 1.0)
+    class_weight_dict[1] = original_stress_weight * 1.2
     
     # Callbacks
     callbacks = [
         EarlyStopping(
             monitor='val_loss',
-            patience=20,
+            patience=30, #Use 20 for cnn/lstm models
             restore_best_weights=True,
             verbose=1
         ),
         ReduceLROnPlateau(
             monitor='val_loss',
             factor=0.5,
-            patience=10,
+            patience=15, #Use 10 for cnn/lstm models
             min_lr=1e-7,
             verbose=1
         )
@@ -169,9 +175,296 @@ def plot_history(history):
     print("\nTraining plot saved as 'training_history.png'\n")
     plt.show()
 
+def build_model(model_name, input_shape):
+    """Build model by name"""
+    models = {
+        'model1_new': model1_new,
+        'model2_new': model2_new,
+        'model3_new': model3_new,
+        'train_and_ensemble': train_and_ensemble,
+        'model4_cnn_lstm_hybrid': model4_cnn_lstm_hybrid,
+        'model2_simple': model2_simple,
+        'model5_interpretable_transformer': model5_interpretable_transformer,
+        'model5_interpretable_transformer_lite': model5_interpretable_transformer_lite,
+        'model5_cnn_transformer_hybrid': model5_cnn_transformer_hybrid,
+        'model5_cnn_transformer_hybrid_v2': model5_cnn_transformer_hybrid_v2,
+    }
+    
+    if model_name not in models:
+        raise ValueError(f"Unknown model: {model_name}. Available: {list(models.keys())}")
+    
+    model_fn = models[model_name]
+    model = model_fn(input_shape)
+    
+    return model
+
+'''      *********************      MODEL TRANSFORMER (JANUARY 2026)           *****************'''
+class PositionalEncoding(Layer):
+    """
+    Positional encoding for temporal information
+    Essential for transformers to understand sequence order
+    """
+    def __init__(self, d_model, max_len=100, **kwargs):
+        super(PositionalEncoding, self).__init__(**kwargs)
+        self.d_model = d_model
+        self.max_len = max_len
+        
+    def build(self, input_shape):
+        # Create positional encoding matrix
+        position = np.arange(self.max_len)[:, np.newaxis]
+        div_term = np.exp(np.arange(0, self.d_model, 2) * -(np.log(10000.0) / self.d_model))
+        
+        pos_encoding = np.zeros((self.max_len, self.d_model))
+        pos_encoding[:, 0::2] = np.sin(position * div_term)
+        pos_encoding[:, 1::2] = np.cos(position * div_term)
+        
+        self.pos_encoding = tf.constant(pos_encoding[np.newaxis, :, :], dtype=tf.float32)
+        
+    def call(self, x):
+        # Add positional encoding to input
+        seq_len = tf.shape(x)[1]
+        return x + self.pos_encoding[:, :seq_len, :]
+
+def model5_cnn_transformer_hybrid_v2(input_shape):
+    """
+    Optimized CNN-Transformer Hybrid
+    Slightly more capacity, better regularization
+    """
+    from tensorflow.keras.layers import Input, Conv1D, BatchNormalization, Dropout
+    from tensorflow.keras.layers import MultiHeadAttention, LayerNormalization
+    from tensorflow.keras.layers import GlobalAveragePooling1D, Dense, MaxPooling1D
+    from tensorflow.keras.models import Model
+    
+    inputs = Input(shape=input_shape, name='hrv_input')
+    
+    # ============ ENHANCED CNN FEATURE EXTRACTION ============
+    # First conv block
+    x = Conv1D(64, kernel_size=3, activation='relu', padding='same', name='conv1')(inputs)
+    x = BatchNormalization(name='bn1')(x)
+    x = Dropout(0.2, name='dropout_conv1')(x)
+    
+    # Second conv block (deeper)
+    x = Conv1D(128, kernel_size=3, activation='relu', padding='same', name='conv2')(x)
+    x = BatchNormalization(name='bn2')(x)
+    x = Dropout(0.2, name='dropout_conv2')(x)
+    
+    # Third conv block (even deeper)
+    x = Conv1D(128, kernel_size=3, activation='relu', padding='same', name='conv3')(x)
+    x = BatchNormalization(name='bn3')(x)
+    x = Dropout(0.25, name='dropout_conv3')(x)
+    
+    # ============ TRANSFORMER ATTENTION ============
+    # Add positional encoding (matching dimension)
+    x = PositionalEncoding(128, max_len=input_shape[0], name='positional_encoding')(x)
+    
+    # Multi-head attention
+    attn_output = MultiHeadAttention(
+        num_heads=8,  # ← Increased from 4
+        key_dim=16,
+        dropout=0.2,
+        name='attention'
+    )(x, x)
+    
+    # Add & Norm
+    x = LayerNormalization(epsilon=1e-6, name='norm1')(x + attn_output)
+    
+    # Feed-forward network (wider)
+    ff_output = Dense(256, activation='relu', name='ffn1')(x)  # ← Increased from 128
+    ff_output = Dropout(0.3, name='dropout_ffn')(ff_output)
+    ff_output = Dense(128, name='ffn2')(ff_output)
+    
+    # Add & Norm
+    x = LayerNormalization(epsilon=1e-6, name='norm2')(x + ff_output)
+    x = Dropout(0.3, name='dropout_transformer')(x)
+    
+    # ============ CLASSIFICATION HEAD ============
+    # Global average pooling
+    x = GlobalAveragePooling1D(name='global_pooling')(x)
+    
+    # Deeper classification head
+    x = Dense(64, activation='relu', name='dense1')(x)  # ← Increased from 32
+    x = BatchNormalization(name='bn_dense')(x)
+    x = Dropout(0.4, name='dropout_dense1')(x)
+    
+    x = Dense(32, activation='relu', name='dense2')(x)
+    x = Dropout(0.4, name='dropout_dense2')(x)
+    
+    outputs = Dense(1, activation='sigmoid', name='stress_prediction')(x)
+    
+    # Create model
+    model = Model(inputs=inputs, outputs=outputs, name='CNN_Transformer_Hybrid_V2')
+    
+    return model
+
+def model5_cnn_transformer_hybrid(input_shape):
+    """
+    CNN-Transformer Hybrid
+    CNN extracts features, Transformer adds attention
+    Best for small datasets with short sequences
+    """
+    from tensorflow.keras.layers import Input, Conv1D, BatchNormalization, Dropout
+    from tensorflow.keras.layers import MultiHeadAttention, LayerNormalization
+    from tensorflow.keras.layers import GlobalAveragePooling1D, Dense
+    from tensorflow.keras.models import Model
+    
+    inputs = Input(shape=input_shape, name='hrv_input')
+    
+    # ============ CNN FEATURE EXTRACTION ============
+    # First conv block
+    x = Conv1D(64, kernel_size=3, activation='relu', padding='same', name='conv1')(inputs)
+    x = BatchNormalization(name='bn1')(x)
+    x = Dropout(0.2, name='dropout_conv1')(x)
+    
+    # Second conv block
+    x = Conv1D(64, kernel_size=3, activation='relu', padding='same', name='conv2')(x)
+    x = BatchNormalization(name='bn2')(x)
+    x = Dropout(0.2, name='dropout_conv2')(x)
+    
+    # ============ TRANSFORMER ATTENTION ============
+    # Add positional encoding
+    x = PositionalEncoding(64, max_len=input_shape[0], name='positional_encoding')(x)
+    
+    # Multi-head attention
+    attn_output = MultiHeadAttention(
+        num_heads=4,
+        key_dim=16,
+        dropout=0.2,
+        name='attention'
+    )(x, x)
+    
+    # Add & Norm
+    x = LayerNormalization(epsilon=1e-6, name='norm1')(x + attn_output)
+    
+    # Feed-forward network
+    ff_output = Dense(128, activation='relu', name='ffn1')(x)
+    ff_output = Dropout(0.3, name='dropout_ffn')(ff_output)
+    ff_output = Dense(64, name='ffn2')(ff_output)
+    
+    # Add & Norm
+    x = LayerNormalization(epsilon=1e-6, name='norm2')(x + ff_output)
+    x = Dropout(0.3, name='dropout_transformer')(x)
+    
+    # ============ CLASSIFICATION HEAD ============
+    # Global average pooling
+    x = GlobalAveragePooling1D(name='global_pooling')(x)
+    
+    # Dense layers
+    x = Dense(32, activation='relu', name='dense1')(x)
+    x = Dropout(0.4, name='dropout_dense')(x)
+    
+    outputs = Dense(1, activation='sigmoid', name='stress_prediction')(x)
+    
+    # Create model
+    model = Model(inputs=inputs, outputs=outputs, name='CNN_Transformer_Hybrid')
+    
+    return model
 
 
-'''      *********************      MODELS FIXED            *****************'''
+def model5_interpretable_transformer_lite(input_shape):
+    """
+    Lighter transformer for small datasets
+    """
+    
+    # Reduced dimensions
+    d_model = 32  # Down from 64
+    num_heads = 2  # Down from 4
+    num_layers = 1  # Down from 2
+    
+    # Input
+    inputs = Input(shape=input_shape, name='hrv_input')
+    
+    # Project to d_model
+    x = Dense(d_model, name='input_projection')(inputs)
+    
+    # Positional encoding
+    x = PositionalEncoding(d_model, max_len=input_shape[0], name='positional_encoding')(x)
+    
+    # Single transformer block
+    attn_output = MultiHeadAttention(
+        num_heads=num_heads,
+        key_dim=d_model // num_heads,
+        dropout=0.2,  # More dropout
+        name='attention_layer'
+    )(x, x)
+    
+    x = LayerNormalization(epsilon=1e-6, name='norm1')(x + attn_output)
+    
+    # Feed-forward
+    ff = Dense(d_model * 2, activation='relu', name='ffn1')(x)
+    ff = Dropout(0.3, name='dropout_ffn')(ff)
+    ff = Dense(d_model, name='ffn2')(ff)
+    
+    x = LayerNormalization(epsilon=1e-6, name='norm2')(x + ff)
+    x = Dropout(0.4, name='dropout_main')(x)
+    
+    # Global pooling
+    x = GlobalAveragePooling1D(name='global_pooling')(x)
+    
+    # Simpler classification head
+    x = Dense(16, activation='relu', name='dense1')(x)
+    x = Dropout(0.5, name='dropout_final')(x)
+    outputs = Dense(1, activation='sigmoid', name='stress_prediction')(x)
+    
+    model = Model(inputs=inputs, outputs=outputs, name='TransformerLite')
+    
+    return model
+
+def model5_interpretable_transformer(input_shape, num_heads=4, d_model=64, num_layers=2):
+    """
+    Interpretable Transformer for Stress Detection
+    
+    Args:
+        input_shape: (sequence_length, features) e.g., (8, 1)
+        num_heads: Number of attention heads
+        d_model: Model dimension
+        num_layers: Number of transformer blocks
+    """
+    
+    # Input
+    inputs = Input(shape=input_shape, name='hrv_input')
+    
+    # Project to d_model dimensions
+    x = Dense(d_model, name='input_projection')(inputs)
+    
+    # Add positional encoding
+    x = PositionalEncoding(d_model, max_len=input_shape[0], name='positional_encoding')(x)
+    
+    # Transformer blocks
+    for i in range(num_layers):
+        # Multi-head self-attention
+        attn_output = MultiHeadAttention(
+            num_heads=num_heads,
+            key_dim=d_model // num_heads,
+            dropout=0.1,
+            name=f'attention_layer_{i}'
+        )(x, x)
+        
+        # Add & Norm
+        x = LayerNormalization(epsilon=1e-6, name=f'norm1_{i}')(x + attn_output)
+        
+        # Feed-forward network
+        ff_output = Dense(d_model * 4, activation='relu', name=f'ffn1_{i}')(x)
+        ff_output = Dropout(0.1, name=f'dropout_ffn1_{i}')(ff_output)
+        ff_output = Dense(d_model, name=f'ffn2_{i}')(ff_output)
+        
+        # Add & Norm
+        x = LayerNormalization(epsilon=1e-6, name=f'norm2_{i}')(x + ff_output)
+        x = Dropout(0.3, name=f'dropout_block_{i}')(x)
+    
+    # Global pooling
+    x = GlobalAveragePooling1D(name='global_pooling')(x)
+    
+    # Classification
+    x = Dense(32, activation='relu', name='dense1')(x)
+    x = Dropout(0.4, name='dropout_final')(x)
+    outputs = Dense(1, activation='sigmoid', name='stress_prediction')(x)
+    
+    # Create model
+    model = Model(inputs=inputs, outputs=outputs, name='InterpretableTransformer')
+    
+    return model
+
+'''      *********************      MODELS FIXED (DECEMBER 2025)           *****************'''
 def model1_new(input_shape):
     """Improved CNN Model"""
     model = Sequential([
