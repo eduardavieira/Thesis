@@ -29,16 +29,16 @@ def load_dataset(path):
     data = data.dropna(subset=[data.columns[1]])  # Drop rows where label is NaN
     
     # Check for NaN in features
-    feature_cols = data.iloc[:,2:12]
+    feature_cols = data.iloc[:,2:10]
     nan_features = feature_cols.isna().any(axis=1).sum()
     print(f"Rows with NaN features: {nan_features}")
     
     # Remove rows with NaN features
-    data = data.dropna(subset=data.columns[2:12])
+    data = data.dropna(subset=data.columns[2:10])
     
     print(f"Clean data shape: {data.shape}\n")
     
-    x_features_df = data.iloc[:,2:12]
+    x_features_df = data.iloc[:,2:10]
     y_label_df = data.iloc[:,1]
     
     x_features = x_features_df.to_numpy()

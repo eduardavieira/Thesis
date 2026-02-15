@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.optimizers import Adam, SGD #Adagrad, Adadelta, Adamax, Nadam
 import time
+import os
 
 if __name__ == '__main__':
     #Dataset Info
@@ -84,8 +85,18 @@ if __name__ == '__main__':
         y_test
     )
 
+    os.makedirs('saved_models', exist_ok=True)
+    model.save('saved_models/used_model.h5')
+
     training_time = time.time() - training_start
     print(f"  Total time:      {training_time:.2f}s ({training_time/60:.2f} min)")
+    
+    # Run explainability analysis
+    print("\n" + "="*60)
+    print("STARTING EXPLAINABILITY ANALYSIS")
+    print("="*60)
+    
+    exec(open('run_explainability.py').read())
 
     '''
     print(f"\nReshaped:")
