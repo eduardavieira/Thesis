@@ -179,15 +179,15 @@ def build_model(model_name, input_shape):
     """Build model by name"""
     models = {
         'model1_new': model1_new,
-        'model2_new': model2_new,
+        'model2_new': model2_new, #Model B
         'model3_new': model3_new,
         'train_and_ensemble': train_and_ensemble,
-        'model4_cnn_lstm_hybrid': model4_cnn_lstm_hybrid,
-        'model2_simple': model2_simple,
+        'model4_cnn_lstm_hybrid': model4_cnn_lstm_hybrid, #Model C
+        'model2_simple': model2_simple, #Model A
         'model5_interpretable_transformer': model5_interpretable_transformer,
         'model5_interpretable_transformer_lite': model5_interpretable_transformer_lite,
         'model5_cnn_transformer_hybrid': model5_cnn_transformer_hybrid,
-        'model5_cnn_transformer_hybrid_v2': model5_cnn_transformer_hybrid_v2,
+        'model5_cnn_transformer_hybrid_v2': model5_cnn_transformer_hybrid_v2, #Model D
     }
     
     if model_name not in models:

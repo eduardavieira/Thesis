@@ -85,8 +85,8 @@ if __name__ == '__main__':
         y_test
     )
 
-    os.makedirs('saved_models', exist_ok=True)
-    model.save('saved_models/used_model.h5')
+    #os.makedirs('saved_models', exist_ok=True)
+    #model.save('saved_models/used_model.h5')
 
     training_time = time.time() - training_start
     print(f"  Total time:      {training_time:.2f}s ({training_time/60:.2f} min)")
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     print("STARTING EXPLAINABILITY ANALYSIS")
     print("="*60)
     
-    exec(open('run_explainability.py').read())
+    #exec(open('run_explainability.py').read())
 
     '''
     print(f"\nReshaped:")
