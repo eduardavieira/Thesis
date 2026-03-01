@@ -1,6 +1,6 @@
 # Stress Detection from Ultra-Short HRV using Deep Learning
 
-> Master's Thesis — Eduarda | NOVA School of Science and Technology
+> Master's Thesis — Eduarda Vieira | Universidade do Minho
 
 A deep learning system for real-time binary stress classification using ultra-short (30-second) Heart Rate Variability (HRV) features extracted from ECG signals. The system combines a CNN-Transformer hybrid architecture with explainability analysis and an AI-powered feedback agent.
 
