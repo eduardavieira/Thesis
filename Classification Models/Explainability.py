@@ -66,7 +66,8 @@ class AttentionExtractor:
         colors = plt.cm.RdYlGn_r(attention_scores)
         ax1.barh(feature_names, attention_scores, color=colors, alpha=0.8)
         ax1.set_xlabel('Attention Score (Importance)', fontsize=12)
-        ax1.set_title(f'Feature Importance\nPrediction: {"STRESS" if prediction > 0.5 else "NO STRESS"} ({prediction:.1%})', 
+        conf = prediction if prediction > 0.5 else 1 - prediction
+        ax1.set_title(f'Feature Importance\nPrediction: {"STRESS" if prediction > 0.5 else "NO STRESS"} ({conf:.1%})', 
                      fontsize=13, fontweight='bold')
         ax1.set_xlim(0, 1)
         ax1.grid(axis='x', alpha=0.3)
@@ -269,7 +270,8 @@ class SHAPExplainer:
         
         ax.axvline(x=0, color='black', linestyle='--', linewidth=1.5, alpha=0.7)
         ax.set_xlabel('SHAP Value (Impact on Prediction)', fontsize=12, fontweight='bold')
-        ax.set_title(f'Feature Contributions\nPrediction: {"STRESS" if prediction > 0.5 else "NO STRESS"} ({prediction:.1%})', 
+        conf = prediction if prediction > 0.5 else 1 - prediction
+        ax.set_title(f'Feature Contributions\nPrediction: {"STRESS" if prediction > 0.5 else "NO STRESS"} ({conf:.1%})', 
                     fontsize=13, fontweight='bold')
         ax.grid(axis='x', alpha=0.3)
         
@@ -353,7 +355,8 @@ class IntegratedGradientsExplainer:
         colors = ['#e74c3c' if a > 0 else '#3498db' for a in attr_flat]
         bars = ax1.barh(feature_names, attr_flat, color=colors, alpha=0.8)
         ax1.set_xlabel('Attribution (Contribution to Stress Prediction)', fontsize=12, fontweight='bold')
-        ax1.set_title(f'Integrated Gradients Explanation\nPrediction: {"STRESS" if prediction > 0.5 else "NO STRESS"} ({prediction:.1%})', 
+        conf = prediction if prediction > 0.5 else 1 - prediction
+        ax1.set_title(f'Integrated Gradients Explanation\nPrediction: {"STRESS" if prediction > 0.5 else "NO STRESS"} ({conf:.1%})', 
                      fontsize=13, fontweight='bold')
         ax1.axvline(x=0, color='black', linestyle='--', linewidth=1.5)
         ax1.grid(axis='x', alpha=0.3)
@@ -532,3 +535,76 @@ def evaluate_explainability_metrics(model, x_test, y_test, feature_names):
         'stability': stability,
         'feature_importance': dict(zip(feature_names, feature_importance))
     }
+
+# ============================================================
+# 6. MAIN - CLI ENTRY POINT
+# ============================================================
+
+if __name__ == '__main__':
+    import argparse
+    import os
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', required=True)
+    parser.add_argument('--data', required=True)
+    parser.add_argument('--output_dir', default='results/case_studies')
+    args = parser.parse_args()
+
+    # ── Load model ──────────────────────────────────────────
+    class PositionalEncoding(tf.keras.layers.Layer):
+        def __init__(self, d_model, max_len=100, **kwargs):
+            super().__init__(**kwargs)
+            self.d_model = d_model
+            self.max_len = max_len
+        def build(self, input_shape):
+            import numpy as np
+            position = np.arange(self.max_len)[:, np.newaxis]
+            div_term = np.exp(np.arange(0, self.d_model, 2) * -(np.log(10000.0) / self.d_model))
+            pos_encoding = np.zeros((self.max_len, self.d_model))
+            pos_encoding[:, 0::2] = np.sin(position * div_term)
+            pos_encoding[:, 1::2] = np.cos(position * div_term)
+            self.pos_encoding = tf.constant(pos_encoding[np.newaxis, :, :], dtype=tf.float32)
+        def call(self, x):
+            seq_len = tf.shape(x)[1]
+            return x + self.pos_encoding[:, :seq_len, :]
+
+    model = tf.keras.models.load_model(
+        args.model,
+        custom_objects={'PositionalEncoding': PositionalEncoding}
+    )
+    print("Model loaded successfully!")
+
+    # ── Load and preprocess data (same pipeline as main.py) ─
+    import numpy as np
+    df = pd.read_csv(args.data)
+    feature_names = ['hr_mean', 'nni_mean', 'nni_min', 'nni_max', 'sdnn', 'rmssd', 'nn50', 'pnn50']
+    df = df.dropna(subset=feature_names + ['label'])
+    X = df[feature_names].values
+    y = df['label'].values
+
+    # IQR clipping
+    Q1, Q3 = np.percentile(X, 25, axis=0), np.percentile(X, 75, axis=0)
+    IQR = Q3 - Q1
+    X = np.clip(X, Q1 - 3*IQR, Q3 + 3*IQR)
+
+    # Train/test split (same random_state as main.py)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    # Scale (fit on train only)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+    X_test = np.clip(X_test, -5, 5)
+
+    # Reshape
+    X_test = X_test.reshape(-1, 8, 1)
+    y_test = y_test[len(y_test) - len(X_test):]
+
+    print(f"Test set: {len(X_test)} samples")
+
+    # ── Run case studies ─────────────────────────────────────
+    create_case_studies(model, X_test, y_test, feature_names, output_dir=args.output_dir)
