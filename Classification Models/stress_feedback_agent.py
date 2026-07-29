@@ -24,6 +24,7 @@ import requests
 import json
 import numpy as np
 import os
+import sys
 
 
 # ============================================================
@@ -31,7 +32,7 @@ import os
 # ============================================================
 
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-MODEL = "claude-sonnet-4-20250514"
+MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5")
 MAX_TOKENS = 512
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
@@ -64,6 +65,32 @@ Please provide 3 to 5 positive reinforcement messages and wellness tips to help 
 Encourage them to keep up good habits such as regular breaks, hydration, movement, and sleep hygiene.
 Keep the tone warm, upbeat and motivating."""
 
+# Local fallback content, used when the API cannot be reached.
+# Mirrors the structure the system prompt requests (3-5 actionable
+# suggestions, warm register, closing encouragement) so that degraded
+# output is consistent in form with generated output.
+FALLBACK_MESSAGES = {
+    "stress": (
+        "Your readings suggest you may be under some stress right now, and that is a "
+        "normal response.\n\n"
+        "- Take five slow breaths: in for four counts, hold for four, out for six.\n"
+        "- Ground yourself: name five things you can see, four you can touch, three "
+        "you can hear.\n"
+        "- Release your shoulders and unclench your jaw, where tension often sits "
+        "unnoticed.\n"
+        "- If you can, step away for two minutes and look out of a window.\n\n"
+        "This will pass, and taking a moment now makes a difference."
+    ),
+    "no_stress": (
+        "Your readings look balanced and relaxed right now.\n\n"
+        "- Keep moving gently: a short walk or some light stretching maintains this state.\n"
+        "- Drink some water, as hydration supports your body's stress resilience.\n"
+        "- This is a good moment for focused work or something that matters to you.\n"
+        "- Notice how this feels, and what led to it.\n\n"
+        "Whatever you are doing is working. Keep it up."
+    ),
+}
+
 
 # ============================================================
 # AGENT CLASS
@@ -77,6 +104,7 @@ class StressFeedbackAgent:
 
     def __init__(self):
         self.api_url = ANTHROPIC_API_URL
+        self.last_error = None
         self.model = MODEL
         self.headers = {
             "Content-Type": "application/json",
@@ -99,6 +127,9 @@ class StressFeedbackAgent:
         if prediction not in ("stress", "no_stress"):
             raise ValueError(f"Invalid prediction: '{prediction}'. Must be 'stress' or 'no_stress'.")
 
+        if not ANTHROPIC_API_KEY:
+            return self._fallback(prediction, "ANTHROPIC_API_KEY is not set")
+
         # Select the appropriate user prompt
         user_prompt = STRESS_PROMPT if prediction == "stress" else NO_STRESS_PROMPT
 
@@ -115,7 +146,8 @@ class StressFeedbackAgent:
             ]
         }
 
-        # Call the Claude API
+        # Call the Claude API. Any failure degrades to local content rather than
+        # propagating an exception or returning a diagnostic string to the user.
         try:
             response = requests.post(
                 self.api_url,
@@ -124,24 +156,38 @@ class StressFeedbackAgent:
                 timeout=30
             )
             response.raise_for_status()
+            data = response.json()
+            feedback = data["content"][0]["text"]
 
         except requests.exceptions.Timeout:
-            return "[Error] The request to the Claude API timed out. Please try again."
+            return self._fallback(prediction, "request timed out")
         except requests.exceptions.ConnectionError:
-            return "[Error] Could not connect to the Claude API. Check your internet connection."
+            return self._fallback(prediction, "could not connect to the API")
         except requests.exceptions.HTTPError as e:
-            return f"[Error] API request failed: {e}"
+            return self._fallback(prediction, f"API returned an error: {e}")
+        except requests.exceptions.RequestException as e:
+            return self._fallback(prediction, f"request failed: {e}")
+        except ValueError as e:
+            # Covers JSON decoding failures from response.json()
+            return self._fallback(prediction, f"malformed response body: {e}")
+        except (KeyError, IndexError, TypeError) as e:
+            return self._fallback(prediction, f"unexpected response structure: {e}")
 
-        # Parse the response
-        data = response.json()
-
-        # Extract the text content from the response
-        try:
-            feedback = data["content"][0]["text"]
-        except (KeyError, IndexError):
-            return "[Error] Unexpected response format from Claude API."
-
+        self.last_error = None
         return feedback
+
+    def _fallback(self, prediction: str, reason: str) -> str:
+        """
+        Return locally held content for the predicted class.
+
+        The failure reason is recorded on the instance and written to stderr so
+        that it remains visible to a developer, while the user still receives an
+        appropriate intervention message rather than an error string.
+        """
+        self.last_error = reason
+        print(f"[stress_feedback_agent] API call failed ({reason}); "
+              f"using local fallback.", file=sys.stderr)
+        return FALLBACK_MESSAGES[prediction]
 
 
 # ============================================================

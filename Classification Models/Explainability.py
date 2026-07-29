@@ -444,6 +444,72 @@ def create_case_studies(model, x_test, y_test, feature_names, output_dir='case_s
 # 5. QUANTITATIVE EVALUATION
 # ============================================================
 
+def _attribution(model, x):
+    """
+    Absolute first-order gradient of the prediction with respect to the input.
+    Returns a 1-D array of length n_features.
+    """
+    with tf.GradientTape() as tape:
+        x_tensor = tf.constant(x, dtype=tf.float32)
+        tape.watch(x_tensor)
+        pred = model(x_tensor)
+    grad = tape.gradient(pred, x_tensor)
+    return np.abs(grad.numpy()[0, :, 0])
+
+
+def compute_stability(model, x_test, n_samples=100, noise_std=0.05,
+                      n_repeats=3, seed=42):
+    """
+    Explanation stability: the agreement between the attribution of an input and
+    the attribution of the same input under a small perturbation.
+
+    This is the definition used in the XAI literature. It is not the same as the
+    agreement between attributions of two *different* inputs, which measures
+    something else entirely.
+
+    Args:
+        model:      trained Keras model
+        x_test:     test set, shape (n, n_features, 1)
+        n_samples:  number of test samples to evaluate
+        noise_std:  standard deviation of the perturbation, in units of the
+                    standardised feature scale. 0.05 is 5% of one standard
+                    deviation, small relative to between-class differences.
+        n_repeats:  perturbations drawn per sample
+        seed:       seed for the perturbation, so the reported value is reproducible
+
+    Returns:
+        (mean, std, n_comparisons)
+    """
+    from scipy.stats import spearmanr
+
+    rng = np.random.default_rng(seed)
+    similarities = []
+
+    n = min(n_samples, len(x_test))
+    for i in range(n):
+        x = x_test[i:i + 1]
+        base = _attribution(model, x)
+
+        # A constant attribution vector carries no rank information to compare.
+        if np.allclose(base, base[0]):
+            continue
+
+        for _ in range(n_repeats):
+            x_perturbed = x + rng.normal(0.0, noise_std, size=x.shape)
+            perturbed = _attribution(model, x_perturbed)
+
+            if np.allclose(perturbed, perturbed[0]):
+                continue
+
+            corr, _ = spearmanr(base, perturbed)
+            if not np.isnan(corr):
+                similarities.append(corr)
+
+    if not similarities:
+        return float("nan"), float("nan"), 0
+
+    return float(np.mean(similarities)), float(np.std(similarities)), len(similarities)
+
 def evaluate_explainability_metrics(model, x_test, y_test, feature_names):
     """
     Compute quantitative metrics for explainability
@@ -489,50 +555,25 @@ def evaluate_explainability_metrics(model, x_test, y_test, feature_names):
     print(f"   Baseline accuracy: {acc_baseline:.4f}")
     print(f"   Accuracy after removing top-{top_k} features: {acc_masked:.4f}")
     print(f"   Faithfulness (drop): {faithfulness:.4f}")
-    print(f"   → {'Good' if faithfulness > 0.05 else 'Weak'} (>0.05 is good)")
     
-    # 2. Stability: Consistency across similar inputs
+    # 2. Stability: agreement between an explanation and the explanation of the
+    #    same input under a small perturbation
     print("\n  Computing Stability...")
-    
-    n_pairs = 20
-    similarities = []
-    
-    from scipy.stats import spearmanr
-    
-    for i in range(min(n_pairs, len(x_test)-1)):
-        # Get two consecutive samples (often similar)
-        with tf.GradientTape() as tape:
-            x1 = tf.constant(x_test[i:i+1], dtype=tf.float32)
-            tape.watch(x1)
-            pred1 = model(x1)
-        grad1 = np.abs(tape.gradient(pred1, x1).numpy()[0, :, 0])
-        
-        with tf.GradientTape() as tape:
-            x2 = tf.constant(x_test[i+1:i+2], dtype=tf.float32)
-            tape.watch(x2)
-            pred2 = model(x2)
-        grad2 = np.abs(tape.gradient(pred2, x2).numpy()[0, :, 0])
-        
-        # Compute correlation
-        corr, _ = spearmanr(grad1, grad2)
-        if not np.isnan(corr):
-            similarities.append(corr)
-    
-    stability = np.mean(similarities)
-    
-    print(f"   Mean explanation similarity: {stability:.4f}")
-    print(f"   → {'Good' if stability > 0.6 else 'Moderate' if stability > 0.4 else 'Weak'} (>0.6 is good)")
-    
-    print("\n" + "="*60)
-    print("SUMMARY")
-    print("="*60)
-    print(f"  Faithfulness: {faithfulness:.4f} ({' Good' if faithfulness > 0.05 else '⚠️  Weak'})")
-    print(f"  Stability:    {stability:.4f} ({' Good' if stability > 0.6 else '⚠️  Moderate'})")
-    print("="*60 + "\n")
-    
+
+    stability, stability_std, n_comparisons = compute_stability(
+        model, x_test, n_samples=100, noise_std=0.05, n_repeats=3, seed=42
+    )
+
+    print(f"   Perturbation: sigma = 0.05 (standardised units)")
+    print(f"   Comparisons:  {n_comparisons}")
+    print(f"   Mean explanation similarity: {stability:.4f} "
+          f"(SD {stability_std:.4f})")
+
     return {
         'faithfulness': faithfulness,
         'stability': stability,
+        'stability_std': stability_std,
+        'stability_n': n_comparisons,
         'feature_importance': dict(zip(feature_names, feature_importance))
     }
 

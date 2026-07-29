@@ -345,10 +345,7 @@ for i in range(min(3, len(importance_df))):
     print(f"    {i+1}. {feat['Feature']:15s}: {feat['Importance']:.4f}")
 
 print(f"\n  • Faithfulness Score: {metrics['faithfulness']:.4f}")
-print(f"    → {'Good' if metrics['faithfulness'] > 0.05 else '⚠️  Moderate'} (>0.05 is good)")
-
 print(f"\n  • Stability Score: {metrics['stability']:.4f}")
-print(f"    → {'Good' if metrics['stability'] > 0.6 else '⚠️  Moderate'} (>0.6 is good)")
 
 print("\n" + "="*60)
 print("ANALYSIS COMPLETE!")
