@@ -17,7 +17,15 @@ from sklearn.metrics import accuracy_score
 
 class AttentionExtractor:
     """
-    Extract and visualize attention weights from CNN-Transformer model
+    NOTA: apesar do nome, esta classe NAO extrai pesos de atencao.
+    O MultiHeadAttention do TensorFlow nao os expoe, por isso o que e calculado
+    e a magnitude do gradiente |dy/dx| da previsao em relacao a cada feature de
+    entrada. Isso funciona identicamente em qualquer arquitetura -- os Modelos
+    A, B e C incluidos -- e portanto NAO e uma vantagem exclusiva do Model D.
+    Os rotulos das figuras dizem "Gradient Magnitude" por essa razao.
+    O nome da classe mantem-se por compatibilidade com run_explainability.py.
+
+    Visualise gradient-based feature attribution for the CNN-Transformer model
     """
     def __init__(self, model):
         self.model = model
@@ -56,8 +64,11 @@ class AttentionExtractor:
         # Compute attention-like scores (absolute gradient values)
         attention_scores = np.abs(gradients.numpy()[0, :, 0])  # Shape: (8,)
         
-        # Normalize to [0, 1]
-        attention_scores = (attention_scores - attention_scores.min()) / (attention_scores.max() - attention_scores.min() + 1e-8)
+        # Normalizar pelo MAXIMO, nao min-max. A normalizacao min-max mapeia
+        # sempre a feature de menor gradiente para 0 exacto, dando a impressao
+        # falsa de que nao contribui nada -- ponto levantado pela supervisora.
+        # Dividir pelo maximo preserva as magnitudes relativas.
+        attention_scores = attention_scores / (attention_scores.max() + 1e-12)
         
         # Create visualization
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
@@ -65,7 +76,7 @@ class AttentionExtractor:
         # Left: Bar plot of attention scores
         colors = plt.cm.RdYlGn_r(attention_scores)
         ax1.barh(feature_names, attention_scores, color=colors, alpha=0.8)
-        ax1.set_xlabel('Attention Score (Importance)', fontsize=12)
+        ax1.set_xlabel('Gradient Magnitude (Normalised)', fontsize=12)
         conf = prediction if prediction > 0.5 else 1 - prediction
         ax1.set_title(f'Feature Importance\nPrediction: {"STRESS" if prediction > 0.5 else "NO STRESS"} ({conf:.1%})', 
                      fontsize=13, fontweight='bold')
@@ -84,13 +95,13 @@ class AttentionExtractor:
         ax2.set_xticks(range(len(feature_names)))
         ax2.set_xticklabels(feature_names, rotation=45, ha='right')
         ax2.set_ylabel('Normalized Feature Value', fontsize=12)
-        ax2.set_title('Feature Values (bubble size = attention)', fontsize=13, fontweight='bold')
+        ax2.set_title('Feature Values (bubble size = gradient magnitude)', fontsize=13, fontweight='bold')
         ax2.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
         ax2.grid(True, alpha=0.3)
         
         # Add colorbar
         cbar = plt.colorbar(scatter, ax=ax2)
-        cbar.set_label('Attention Score', fontsize=11)
+        cbar.set_label('Gradient Magnitude', fontsize=11)
         
         plt.tight_layout()
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -119,8 +130,16 @@ class AttentionExtractor:
         grad_no_stress = np.abs(tape.gradient(pred, x_tensor).numpy()[0, :, 0])
         
         # Normalize
-        grad_stress = (grad_stress - grad_stress.min()) / (grad_stress.max() - grad_stress.min() + 1e-8)
-        grad_no_stress = (grad_no_stress - grad_no_stress.min()) / (grad_no_stress.max() - grad_no_stress.min() + 1e-8)
+        # Normalizar pelo MAXIMO, nao min-max. A normalizacao min-max mapeia
+        # sempre a feature de menor gradiente para 0 exacto, dando a impressao
+        # falsa de que nao contribui nada -- ponto levantado pela supervisora.
+        # Dividir pelo maximo preserva as magnitudes relativas.
+        # Escala COMUM aos dois perfis: normalizar cada um pelo seu proprio maximo
+        # tornaria os dois picos iguais a 1 e esconderia diferencas de magnitude
+        # entre a amostra de stress e a de nao-stress.
+        _m = max(grad_stress.max(), grad_no_stress.max()) + 1e-12
+        grad_stress = grad_stress / _m
+        grad_no_stress = grad_no_stress / _m
         
         # Create comparison plot
         fig, ax = plt.subplots(figsize=(12, 6))
@@ -134,8 +153,8 @@ class AttentionExtractor:
                       color='#3498db', alpha=0.8)
         
         ax.set_xlabel('HRV Features', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Attention Score', fontsize=12, fontweight='bold')
-        ax.set_title('Attention Pattern Comparison: Stress vs No Stress', 
+        ax.set_ylabel('Gradient Magnitude (Normalised)', fontsize=12, fontweight='bold')
+        ax.set_title('Gradient Attribution: Stress vs No Stress', 
                     fontsize=14, fontweight='bold')
         ax.set_xticks(x_pos)
         ax.set_xticklabels(feature_names, rotation=45, ha='right')

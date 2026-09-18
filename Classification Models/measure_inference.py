@@ -2,19 +2,26 @@ import tensorflow as tf
 import numpy as np
 import time
 from tensorflow.keras.models import load_model
-from Data import load_features, normalize_data
+from Data import normalize_data
+import pandas as pd
 from Models import PositionalEncoding
 from sklearn.model_selection import train_test_split
 
 # Load model
 model = load_model(
-    'saved_models/used_model.h5',
+    'saved_models/wesad_model.h5',
     custom_objects={'PositionalEncoding': PositionalEncoding}
 )
 
-# Load data
-path = "/home/eduarda/Desktop/ProcessedECGData.csv"
-x_features, y_label, numeric_features = load_features(path)
+# Load data (V5, filtrada ao WESAD, por NOME e nao por posicao)
+path = "/home/eduarda/Desktop/ProcessedECGData_v5.csv"
+numeric_features = ['hr_mean','nni_mean','nni_min','nni_max',
+                    'sdnn','rmssd','nn50','pnn50']
+_d = pd.read_csv(path).dropna(subset=numeric_features + ['label'])
+_d = _d[_d['file'].str.contains('ECG_values')].reset_index(drop=True)  # WESAD
+x_features = _d[numeric_features].to_numpy(float)
+y_label = _d['label'].to_numpy().astype(int)
+print(f"WESAD: {len(_d)} janelas")
 
 x_train, x_test, y_train, y_test = train_test_split(
     x_features, y_label,
