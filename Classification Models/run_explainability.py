@@ -81,9 +81,9 @@ feature_names = numeric_features
 print("COMPREHENSIVE EXPLAINABILITY ANALYSIS")
 
 # ============================================================
-# 1. ATTENTION ANALYSIS
+# 1. GRADIENT ATTRIBUTION
 # ============================================================
-print("1. ATTENTION VISUALIZATION")
+print("1. GRADIENT ATTRIBUTION")
 
 attention_extractor = AttentionExtractor(model)
 
@@ -101,7 +101,7 @@ if len(tp_indices) > 0:
         y_test[tp_idx],
         y_pred_proba[tp_idx],
         feature_names,
-        save_path='results/attention_true_positive.png'
+        save_path='results/gradient_true_positive.png'
     )
 else:
     print("No true positive examples found")
@@ -116,7 +116,7 @@ if len(tn_indices) > 0:
         y_test[tn_idx],
         y_pred_proba[tn_idx],
         feature_names,
-        save_path='results/attention_true_negative.png'
+        save_path='results/gradient_true_negative.png'
     )
     
     # Compare patterns
@@ -126,7 +126,7 @@ if len(tn_indices) > 0:
             x_test_reshape[tp_idx:tp_idx+1],
             x_test_reshape[tn_idx:tn_idx+1],
             feature_names,
-            save_path='results/attention_stress_vs_nostress.png'
+            save_path='results/gradient_by_class.png'
         )
 else:
     print("⚠️  No true negative examples found")
@@ -320,22 +320,22 @@ metrics = evaluate_explainability_metrics(
 print("EXPLAINABILITY ANALYSIS COMPLETE")
 print("\nGenerated Files:")
 print("  results/")
-print("  ├── attention_true_positive.png")
-print("  ├── attention_true_negative.png")
-print("  ├── attention_stress_vs_nostress.png")
+print("  ├── gradient_true_positive.png")
+print("  ├── gradient_true_negative.png")
+print("  ├── gradient_by_class.png")
 print("  ├── shap_global_importance.png")
 print("  ├── shap_stress_example.png")
 print("  ├── shap_nostress_example.png")
 print("  ├── ig_stress_example.png")
 print("  ├── ig_nostress_example.png")
 print("  └── case_studies/")
-print("       ├── true_positive_high_conf_attention.png")
+print("       ├── true_positive_high_conf_gradient.png")
 print("       ├── true_positive_high_conf_ig.png")
-print("       ├── true_negative_high_conf_attention.png")
+print("       ├── true_negative_high_conf_gradient.png")
 print("       ├── true_negative_high_conf_ig.png")
-print("       ├── false_positive_attention.png")
+print("       ├── false_positive_gradient.png")
 print("       ├── false_positive_ig.png")
-print("       ├── false_negative_attention.png")
+print("       ├── false_negative_gradient.png")
 print("       └── false_negative_ig.png")
 
 print("\nKey Findings:")

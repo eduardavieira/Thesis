@@ -41,7 +41,7 @@ class AttentionExtractor:
             print("⚠️  No attention layer found in model")
     
     def visualize_attention_heatmap(self, x_sample, y_true, y_pred, feature_names, 
-                                     save_path='attention_heatmap.png'):
+                                     save_path='gradient_attribution.png'):
         """
         Create attention heatmap for a single sample
         
@@ -105,13 +105,13 @@ class AttentionExtractor:
         
         plt.tight_layout()
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Saved attention visualization: {save_path}")
+        print(f"Saved gradient attribution: {save_path}")
         plt.close()
         
         return attention_scores
     
     def compare_attention_patterns(self, x_stress, x_no_stress, feature_names,
-                                    save_path='attention_comparison.png'):
+                                    save_path='gradient_by_class.png'):
         """
         Compare attention patterns between stress and no-stress samples
         """
@@ -163,7 +163,7 @@ class AttentionExtractor:
         
         plt.tight_layout()
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f" Saved attention comparison: {save_path}")
+        print(f" Saved gradient attribution by class: {save_path}")
         plt.close()
 
 
@@ -443,7 +443,7 @@ def create_case_studies(model, x_test, y_test, feature_names, output_dir='case_s
         # Attention
         attention_extractor.visualize_attention_heatmap(
             x_sample, y_true, y_pred_val, feature_names,
-            save_path=f'{output_dir}/{case_name}_attention.png'
+            save_path=f'{output_dir}/{case_name}_gradient.png'
         )
         
         # Integrated Gradients
