@@ -100,7 +100,10 @@ invocações: Model B +2,86 pp, D −1,59 pp; F e G < 0,2 pp. Diferenças de pou
 pp entre os Models A–D não são interpretáveis. O C e o D trocaram de ordem.
 
 **As primeiras 16 janelas de cada ficheiro do SWELL** são 8 min de filme
-(relaxação). Excluir.
+(relaxação). **Não foram excluídas na CSV V5** (ex.: `S1_neutral` tem as 117
+janelas possíveis) e têm o rótulo do bloco. Não afeta o WESAD; excluí-las não
+muda a inversão (mediana −5,44 vs −5,26 bpm, 18/20 sujeitos). Documentado no
+apêndice A.1.1.
 
 **Neste sistema o `grep` é o ugrep**, que recusa expressões longas ("exceeds
 complexity limits"). Para procurar muitos padrões no LaTeX, usar Python.

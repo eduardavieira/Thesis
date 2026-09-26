@@ -1,100 +1,267 @@
-# HRV30 — Stress Detection from Ultra-Short HRV using Deep Learning
+# HRV30 — Stress Detection from Ultra-Short HRV
 
 > Master's Thesis — Eduarda Vieira | Universidade do Minho
 
-A deep learning system for real-time binary stress classification using ultra-short (30-second) Heart Rate Variability (HRV) features extracted from ECG signals. The system combines a CNN-Transformer hybrid architecture with gradient-based explainability analysis and an AI-powered feedback agent.
+Binary stress detection from 30-second ECG windows, the acquisition length of
+current consumer smartwatch ECG. The repository covers the full pipeline: ECG
+processing and HRV feature extraction, classical and deep learning classifiers,
+subject-independent evaluation, gradient-based explainability, and an AI
+feedback agent.
 
 ---
 
-## Overview
+## Key findings
 
-Mental stress is associated with increased risk of cardiovascular disease, cognitive dysfunction and reduced quality of life. HRV30 develops and evaluates four deep learning architectures for stress detection using only 8 time-domain HRV features extracted from 30-second ECG windows — the acquisition length of current consumer smartwatch ECG.
+**Detection works when the label reflects a physiological state.** On WESAD,
+evaluated by subject (GroupKFold and leave-one-subject-out, no subject in both
+train and test), every trained model reaches a ROC-AUC between 0.87 and 0.95.
 
-The best-performing model (Model D, CNN-Transformer) achieves **60.68% accuracy** and **76.95% recall** on a combined SWELL-KW and WESAD dataset. This figure should be read against the constraint rather than against the literature at large: see [Why ~60%?](#why-60-accuracy) below.
+**The two public datasets used carry physiologically opposite labels.** In
+WESAD, heart rate rises by 25.7 bpm under stress. In SWELL-KW it *falls* by
+4.6 bpm, in 22 of 22 participants. A model trained on one dataset and tested on
+the other scores ROC-AUC 0.18–0.44 in all 10 combinations tested. That is not
+chance level (0.5): the signal transfers, but inverted.
+
+**Results must therefore be reported per dataset.** Pooling the two datasets
+produces a figure (~61%) that averages a solvable problem with an ill-posed one.
+A rule that only knows which dataset a window came from reaches 62.58% under a
+random split and 61.35% by subject, above every trained model in the latter.
+
+**The input representation matters more than the architecture.** A two-input
+network that reads the NN-interval series alongside the 8 summary features
+(Model G) reaches 89.95% accuracy and ROC-AUC 0.959 on WESAD under a random
+split, and beats the neural models built on the summary features alone. By
+subject, no difference between any two models survives correction for multiple
+comparisons.
+
+**Ranking is good, the fixed threshold is not.** Under LOSO the AUC stays above
+0.90, but per-subject accuracy ranges from 37.5% to 100% and specificity from
+0% to 100%. A single 0.5 threshold cannot serve people whose resting heart
+rates span 55–99 bpm. That is the quantitative case for per-subject calibration.
+
+### Note on earlier results
+
+Earlier revisions of this repository reported 60.68% accuracy for a
+CNN-Transformer on the pooled dataset. Those figures are superseded by the
+analysis above, for three reasons:
+
+- The original RR-interval filter modified a list while iterating over it, so
+  about 24% of windows kept physiologically implausible intervals.
+- Windows were split at random, so the same participant appeared in both train
+  and test.
+- The two datasets have opposite labels, as described above.
 
 ---
 
-## Repository Structure
+## Results
+
+All WESAD numbers below come from one run of every configuration on identical
+partitions (`results_wesad_pr_*.csv`). 95% confidence intervals for every
+result are in `Classification Models/results/ci_tables.tex`.
+
+### WESAD — random 80/20 split (5 seeds)
+
+| Model | Accuracy (%) | ROC-AUC | PR-AUC | Parameters |
+|---|---|---|---|---|
+| Majority class | 64.55 | 0.500 | 0.354 | — |
+| Logistic regression | 84.97 ± 2.44 | 0.919 ± 0.014 | 0.880 ± 0.025 | — |
+| Random forest | 86.77 ± 2.28 | 0.937 ± 0.015 | 0.908 ± 0.023 | — |
+| Model E — MLP on summary features | 85.19 ± 0.53 | 0.929 ± 0.009 | 0.899 ± 0.021 | 7,393 |
+| Model A — LSTM | 79.37 ± 2.77 | 0.922 ± 0.010 | 0.892 ± 0.021 | 19,009 |
+| Model B — Deep LSTM | 82.75 ± 2.71 | 0.918 ± 0.008 | 0.886 ± 0.016 | 132,993 |
+| Model C — CNN-LSTM | 83.92 ± 0.96 | 0.926 ± 0.011 | 0.894 ± 0.023 | 77,249 |
+| Model D — CNN-Transformer | 83.49 ± 1.77 | 0.924 ± 0.008 | 0.891 ± 0.018 | 218,625 |
+| Model F — Conv1D on NN series | 89.21 ± 1.86 | 0.955 ± 0.011 | 0.931 ± 0.025 | 27,969 |
+| **Model G — NN series + summary** | **89.95 ± 1.50** | **0.959 ± 0.012** | **0.933 ± 0.028** | 32,929 |
+
+Paired t-tests over the five seeds, Holm-corrected for the seven comparisons:
+Model G's accuracy advantage over Models A–E survives the correction
+(*p*<sub>adj</sub> ≤ 0.028; +6.46 pp over Model D). Over logistic regression
+(+4.97 pp) and the random forest (+3.18 pp) it does not (*p*<sub>adj</sub> =
+0.076). In ROC-AUC the gain survives against every model except the random
+forest, three of them at the limit (*p*<sub>adj</sub> = 0.0499). No PR-AUC
+difference survives.
+
+### WESAD — by subject
+
+| Model | GroupKFold ROC-AUC | LOSO accuracy (%) | LOSO ROC-AUC | LOSO PR-AUC |
+|---|---|---|---|---|
+| Majority class | 0.500 | 64.35 | 0.500 | 0.356 |
+| Logistic regression | 0.907 ± 0.090 | 82.55 ± 16.10 | **0.951 ± 0.078** | 0.924 ± 0.134 |
+| Random forest | 0.874 ± 0.086 | 79.95 ± 15.97 | 0.902 ± 0.128 | 0.853 ± 0.192 |
+| Model E | 0.903 ± 0.086 | 79.76 ± 18.17 | 0.940 ± 0.084 | 0.907 ± 0.145 |
+| Model A | 0.902 ± 0.078 | 76.30 ± 21.18 | 0.945 ± 0.089 | 0.918 ± 0.147 |
+| Model B | 0.893 ± 0.064 | 76.19 ± 18.72 | 0.941 ± 0.078 | 0.907 ± 0.137 |
+| Model C | 0.911 ± 0.071 | 81.24 ± 17.04 | 0.949 ± 0.073 | 0.912 ± 0.134 |
+| Model D | 0.902 ± 0.074 | 81.28 ± 14.69 | 0.944 ± 0.071 | 0.906 ± 0.137 |
+| Model F | 0.899 ± 0.108 | 82.06 ± 19.79 | 0.945 ± 0.086 | **0.926 ± 0.127** |
+| Model G | **0.917 ± 0.086** | **82.67 ± 17.18** | 0.919 ± 0.144 | 0.907 ± 0.150 |
+
+No model is distinguishable from the others: none of the 36 pairwise
+comparisons survives Holm correction, in either protocol or any metric, and the
+ranking reverses between protocols. The signal is large (Cohen's *d* = 1.73 for
+mean heart rate), so logistic regression is enough to find it.
+
+LOSO gives a higher AUC than GroupKFold with k = 5 (0.951 vs 0.907 for logistic
+regression). This is expected rather than contradictory. With a single subject
+per test fold, AUC measures how well each person's own windows are ranked. With
+several subjects per fold, it also requires ranking across people with
+different baselines.
+
+### SWELL-KW — subject-independent (GroupKFold, 22 subjects)
+
+No model discriminates above chance at α = 0.05. The highest ROC-AUC is 0.612
+(logistic regression, *p* = 0.058 against 0.5), followed by 0.566 for the
+Conv1D on the NN series. Every model's accuracy falls below the majority class
+(60.78%).
+
+The cause lies in the dataset design. The SWELL-KW paper states that *"the
+neutral condition was always the first condition"*, so the neutral/stress
+contrast is confounded with block order.
+
+### Selected model: Model G
+
+Model G combines a convolutional branch over the NN-interval series (zero-padded
+to 73 beats, with a mask and masked average pooling) and a dense branch over the
+8 summary features. Its gain comes from the representation, not from capacity:
+it has less than a sixth of Model D's parameters, and replacing each window's
+series with its own mean interval, which keeps heart rate and beat count but
+removes the beat-to-beat dynamics, lowers accuracy from 89.95% to 77.78%.
+
+Confusion matrix on the reference partition (seed 42, N = 189):
+
+|  | Predicted no stress | Predicted stress |
+|---|---|---|
+| **Actual no stress** | 114 | 8 |
+| **Actual stress** | 11 | 56 |
+
+Accuracy 89.95% · precision 87.50% · sensitivity 83.58% · specificity 93.44% ·
+ROC-AUC 0.961. Inference takes 53.63 ms per window on CPU, which is negligible
+against a 30-second window.
+
+---
+
+## Repository structure
 
 ```
-├── main.py                     # Training and evaluation pipeline
-├── Models.py                   # All four model architectures + training loop
-├── Data.py                     # Data loading, preprocessing, normalisation
-├── Explainability.py           # Attention proxy, Integrated Gradients, quality metrics
-├── run_explainability.py       # Full explainability analysis (entry point)
-├── stress_feedback_agent.py    # AI feedback agent (Anthropic API + local fallback)
-├── saved_models/
-│   └── used_model.h5           # Saved Model D weights
-└── results/                    # Generated figures
-    └── case_studies/           # Per-case explainability visualisations
+Data Processing/
+├── RPeakDetection_HRV_fixed.py     # ETL: ECG -> HRV features + NN series (current)
+├── RPeakDetection_HRV_RemoteMachine.py   # original ETL (superseded, see note above)
+├── time_duration.csv               # file, duration, label, sampling rate per recording
+├── filtering_wesad.ipynb           # 0.5–40 Hz band-pass for WESAD
+└── Obtaining data/                 # dataset extraction (MATLAB for SWELL-KW, pickle for WESAD)
+
+Classification Models/
+├── Data.py                         # loading and normalisation (Models A–D)
+├── Models.py                       # Models A–D + training loop
+├── retrain_v5.py                   # Models A–D: multi-seed, F1/F2, random/GroupKFold/LOSO, per dataset
+├── train_sequence.py               # Models E, F, G (summary MLP, NN series, both)
+├── wesad_baselines.py              # majority, logistic regression, random forest on WESAD
+├── transfer_test.py                # train on one dataset, test on the other
+├── run_pr.sh                       # final WESAD run of every model, 3 protocols, with PR-AUC
+├── pr_report.py                    # paired tests with Holm correction, numbers quoted in the thesis
+├── confidence_intervals.py         # 95% CIs of every result + LaTeX tables (results/ci_tables.tex)
+├── explain_model_g.py              # train/load Model G on WESAD and run the explainability analysis
+├── model_g_directions.py           # direction of the effects learned by Model G
+├── explain_wesad.py                # same analysis for Model D (earlier selected model)
+├── Explainability.py               # gradient attribution, Integrated Gradients (Model D)
+├── gradient_class_means.py         # per-class attribution (Model D)
+├── personalised_protocol.py        # per-subject threshold calibration (not in the thesis)
+├── measure_inference.py            # inference latency (Model D)
+├── stress_feedback_agent.py        # AI feedback agent (Anthropic API + local fallback)
+├── main.py                         # original V4 training entry point
+├── results_*.csv                   # per-seed / per-fold results of every experiment
+├── results/
+│   ├── model_G/                    # Model G explainability figures and summaries (thesis)
+│   └── ci_tables.tex               # WESAD tables with PR-AUC and the CI appendix
+├── results_v4_backup/              # figures from the earlier revision
+└── saved_models/
+    ├── wesad_model_G.weights.h5    # Model G trained on WESAD (seed 42)
+    ├── wesad_model.h5              # Model D trained on WESAD
+    └── used_model.h5               # Model D from the earlier revision
 ```
 
----
-
-## Models
-
-| Model | Architecture | Accuracy | Recall | F1 | Parameters |
-|-------|-------------|----------|--------|----|------------|
-| Model A | Simple LSTM | 60.00% | 72.24% | 0.67 | ~50K |
-| Model B | Deep LSTM | 60.00% | 77.90% | 0.69 | ~100K |
-| Model C | CNN-LSTM | 59.70% | 62.94% | 0.64 | ~80K |
-| **Model D** | **CNN-Transformer** | **60.68%** | **76.95%** | **0.69** | **218,625** |
-
-Model D is the recommended model: highest accuracy, competitive recall, and interpretability through multi-head self-attention with gradient-based attribution.
-
-All four architectures span three families — recurrent, convolutional and attention-based — and converge within one percentage point of each other, which is the central experimental finding of this work.
+`main.py`, `run_explainability.py` (when run on its own) and `used_model.h5`
+belong to the earlier revision and read absolute paths. Use the scripts below
+for the current results.
 
 ---
 
 ## Datasets
 
-- **SWELL-KW** — 25 subjects performing knowledge work under email-interruption and time-pressure stressors. ECG at 2048 Hz.
-  [Download](https://easy.dans.knaw.nl/ui/datasets/id/easy-dataset:58624)
-
-- **WESAD** — 15 subjects exposed to the Trier Social Stress Test (TSST). ECG at 700 Hz.
+- **WESAD** — 15 subjects, Trier Social Stress Test (public speaking and mental
+  arithmetic). ECG at 700 Hz.
   [Download](https://ubicomp.eti.uni-siegen.de/home/datasets/icmi18/)
+- **SWELL-KW** — 25 subjects recorded, 22 included. Knowledge work under
+  email-interruption and time-pressure conditions. ECG at 2048 Hz.
+  [Download](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/DANS-X55-69ZP)
 
-Combined: 6,596 labelled 30-second windows from 40 subjects. Stress is the majority class (~56%).
+After processing: 5,430 thirty-second windows from 37 subjects.
+
+| Dataset | Neutral | Stress | Total | Stress (%) |
+|---|---|---|---|---|
+| WESAD | 606 | 335 | 941 | 35.60 |
+| SWELL-KW | 1,763 | 2,726 | 4,489 | 60.73 |
+
+The first ~8 minutes of every SWELL-KW block are a relaxation phase (a nature
+film), not the experimental condition. See [Limitations](#limitations).
 
 ---
 
 ## Pipeline
 
 ```
-ECG Signal
-    ↓ Bandpass filter 0.5–40 Hz (WESAD only; SWELL-KW pre-filtered)
-    ↓ QRS detection (BioSPPy)
-    ↓ 30-second windowing
-    ↓ RR interval extraction (pyHRV)
-    ↓ Interval filtering (500–1200 ms)
-    ↓ Feature extraction (8 time-domain features)
-    ↓ ── train/test split (80/20, stratified, random_state=42) ──
-    ↓ IQR clipping at 3×IQR (bounds from training set only)
-    ↓ StandardScaler (fitted on training set only)
-    ↓ Final clip at ±5 SD
-    ↓ Reshape to (samples, 8, 1)
-    ↓ CNN-Transformer classification
-    ↓ AI Feedback Agent
+ECG signal
+  ↓ band-pass 0.5–40 Hz (WESAD; SWELL-KW provided pre-filtered)
+  ↓ 30-second windows
+  ↓ R-peak detection (BioSPPy)
+  ↓ RR intervals
+  ↓ artefact correction: intervals outside 300–2000 ms, or deviating >20% from
+    the local median, are linearly interpolated (not deleted)
+  ↓ windows with >20% corrected intervals are discarded
+  ↓ 8 time-domain HRV features  +  NN-interval series
+  ↓ split (random, GroupKFold or LOSO by subject)
+  ↓ normalisation fitted on the training set only
+  ↓ classifier
+  ↓ AI feedback agent
 ```
 
-### HRV Features
+Normalisation: Models A–D use IQR clipping at 3×IQR, StandardScaler and a clip
+at ±5 SD; Models E–G standardise the series and the summary features and clip
+at ±5 SD; the reference classifiers use StandardScaler alone.
 
-| # | Feature | Description |
-|---|---------|-------------|
-| 1 | `hr_mean` | Mean heart rate |
-| 2 | `nni_mean` | Mean NN interval |
-| 3 | `nni_min` | Minimum NN interval |
-| 4 | `nni_max` | Maximum NN interval |
-| 5 | `sdnn` | Standard deviation of NN intervals |
-| 6 | `rmssd` | Root mean square of successive differences |
-| 7 | `nn50` | Count of successive differences > 50 ms |
-| 8 | `pnn50` | Percentage of nn50 |
+Artefacts are interpolated rather than deleted because RMSSD, NN50 and pNN50
+are computed from successive differences, and deleting an interval creates a
+false difference between its neighbours. The old 500–1200 ms range would have
+marked 11.12% of the intervals in stress windows against 7.27% in no-stress
+windows. The feature computation replicates `pyhrv.hrv()` exactly, including
+its truncation to integer milliseconds, and runs about 13,000× faster.
 
-Frequency-domain features (LF/HF ratio, Total Power) were evaluated and excluded: they require a minimum duration of stationary data for meaningful spectral estimation and are not reliable at 30 seconds.
+### HRV features
+
+| Feature | Description |
+|---|---|
+| `hr_mean` | Mean heart rate |
+| `nni_mean` | Mean NN interval |
+| `nni_min` | Minimum NN interval |
+| `nni_max` | Maximum NN interval |
+| `sdnn` | Standard deviation of NN intervals |
+| `rmssd` | Root mean square of successive differences |
+| `nn50` | Successive differences > 50 ms |
+| `pnn50` | Percentage of `nn50` |
+
+LF/HF ratio and total power (feature set F1) were compared against the 8
+time-domain features (F2) with Model D on WESAD. Removing them does not change
+performance (+0.53 pp accuracy, *p* = 0.662, 5 seeds), so no claim is made that
+they hurt.
 
 ### Class weighting
 
-Class imbalance is handled with `compute_class_weight('balanced')`, followed by a **1.2× multiplier applied to the stress class**. Since stress is the majority class, the balanced weighting assigns it a weight below unity; the multiplier partially offsets this, deliberately shifting the decision boundary toward higher recall at the cost of specificity. This is a design choice, not a balancing correction — see the confusion matrix below.
+Class weights are computed with `compute_class_weight('balanced')`, and a 1.2×
+multiplier is applied to the stress class (all neural models). In WESAD, where
+stress is the minority class, this gives about 1.68 for stress against 0.78 for
+no stress, shifting the decision boundary towards sensitivity. Logistic
+regression is unweighted and the random forest uses balanced weights.
 
 ---
 
@@ -103,166 +270,178 @@ Class imbalance is handled with `compute_class_weight('balanced')`, followed by 
 ```bash
 git clone https://github.com/eduardavieira/Thesis.git
 cd Thesis
-
-pip install tensorflow scikit-learn pandas numpy matplotlib seaborn pyhrv biosppy scipy requests
+pip install tensorflow==2.13.1 scikit-learn pandas numpy scipy matplotlib \
+            biosppy pyhrv requests
 ```
-
-### Environment used for the reported results
 
 | | |
 |---|---|
 | OS | Ubuntu 20.04 LTS |
 | Python | 3.8.10 |
 | TensorFlow | 2.13.1 |
-| Hardware | Intel Core i5-8250U, CPU only (no CUDA) |
+| Hardware | Intel Core i5-8250U, CPU only |
 
-> **Reproducibility note.** The train/test split is fixed by `random_state=42`, so the data partition is identical across runs. TensorFlow and NumPy are **not** seeded, so weight initialisation, dropout masks and batch shuffling vary between runs: retraining will produce a model whose metrics differ slightly from those reported. The saved `used_model.h5` is the model behind every number in this README.
+> **Reproducibility.** Seeds are set, but TensorFlow is not deterministic on a
+> multi-threaded CPU. The same code and seeds, run twice, changed the mean
+> accuracy of Model B by 2.86 pp and of Model D by 1.59 pp; Models F and G
+> changed by less than 0.2 pp. Differences of a few percentage points between
+> Models A–D should not be interpreted. The `results_*.csv` files hold the exact
+> per-seed and per-fold numbers behind every table, and
+> `wesad_model_G.weights.h5` is the model behind the figures.
 
 ---
 
 ## Usage
 
-### Train from scratch
+### 1. Extract features
 
 ```bash
-python3 main.py
+cd "Data Processing"
+python3 RPeakDetection_HRV_fixed.py \
+  --datasets  /path/to/raw/ecg \
+  --durations time_duration.csv \
+  --out        ProcessedECGData_v5.csv \
+  --series-out NNSeries_v5.npz
 ```
 
-Loads and preprocesses `ProcessedECGData.csv`, trains Model D, evaluates on the held-out test set, and saves to `saved_models/used_model.h5`.
+This takes about 13 minutes for the full dataset. It prints artefact-correction
+statistics per class. The CSV and the `.npz` are aligned row by row, so always
+generate them in the same run.
 
-### Run the explainability analysis
+### 2. Run the experiments
 
 ```bash
-python3 run_explainability.py
+cd "Classification Models"
+
+# Every model on WESAD, three protocols, with PR-AUC (paths set inside the script)
+./run_pr.sh abcd && ./run_pr.sh ef && ./run_pr.sh g
+python3 wesad_baselines.py --out results_wesad_pr_baselines.csv
+
+# Numbers and paired tests quoted in the thesis; tables with 95% CIs
+python3 pr_report.py
+python3 confidence_intervals.py
+
+# Single configurations
+python3 retrain_v5.py ProcessedECGData_v5.csv --models D --dataset WESAD --cv loso
+python3 train_sequence.py --csv ProcessedECGData_v5.csv --series NNSeries_v5.npz \
+                          --arch both --dataset WESAD --cv loso
+
+# Cross-dataset transfer
+python3 transfer_test.py --csv ProcessedECGData_v5.csv --series NNSeries_v5.npz
 ```
 
-Loads the saved model and produces all figures in `results/`, plus the faithfulness and stability metrics. Deterministic given the saved model.
+Common options: `--cv random|group|loso`, `--dataset all|WESAD|SWELL`,
+`--seeds N`, `--out file.csv`. `retrain_v5.py` also takes `--models A,B,C,D`
+and `--features F1|F2`; `train_sequence.py` takes `--arch summary|seq|both`
+(Models E, F, G). Features are selected by column name.
 
-### Run the feedback agent on a test sample
+### 3. Explainability
 
 ```bash
-python3 stress_feedback_agent.py \
-  --model saved_models/used_model.h5 \
-  --data /path/to/ProcessedECGData.csv \
-  --sample 3
+python3 explain_model_g.py          # train Model G on WESAD (~2 min) and explain
+python3 explain_model_g.py --load   # reuse saved_models/wesad_model_G.weights.h5
+python3 model_g_directions.py       # direction of the learned effects
 ```
 
-### Run the feedback agent standalone
+Figures and summaries are written to `results/model_G/`.
 
-```bash
-python3 stress_feedback_agent.py --prediction stress
-python3 stress_feedback_agent.py --prediction no_stress
-```
-
-No model or TensorFlow required — the agent depends only on an HTTP client.
-
----
-
-## AI Feedback Agent
-
-The agent translates a binary classification into a personalised lifestyle intervention message via the Anthropic API. The two stages are fully decoupled: the classifier has no dependency on the agent, and the agent holds no reference to the model.
-
-**Only the predicted class crosses the API boundary.** No HRV values, no confidence score, no feature attributions and no user identifier are transmitted, so no physiological data leaves the device.
-
-### Setup
+### 4. Feedback agent
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
+python3 stress_feedback_agent.py --prediction stress        # standalone, no model
 ```
 
-The model identifier is configurable:
-
-```bash
-export CLAUDE_MODEL="claude-sonnet-5"   # default
-```
-
-> The results reported in the thesis were generated with `claude-sonnet-4-20250514`, which the provider retired on 15 June 2026. Requests to retired identifiers return an error with no automatic substitution. Check the [current model list](https://docs.claude.com/en/docs/about-claude/models/overview) if calls fail.
-
-### Failure handling
-
-API calls are wrapped with a 30-second timeout and handlers for timeouts, connection failures, HTTP errors, malformed bodies, unexpected response structures and any remaining transport error. A missing API key is detected before the request is issued. On any failure the agent returns locally held content appropriate to the predicted class and logs the reason to stderr — the user still receives a usable intervention message without connectivity.
-
-### Example output (stress detected, 85.0% confidence)
-
-```
-WELLNESS FEEDBACK:
-I can see you're experiencing some stress right now, and that's completely
-normal — let's help you find your calm again. Take 5 deep breaths — breathe
-in for 4 counts, hold for 4, then exhale slowly for 6 counts. Ground yourself
-with the 5-4-3-2-1 technique: notice 5 things you can see, 4 you can touch,
-3 you can hear, 2 you can smell, and 1 you can taste. Relax your shoulders
-and jaw — we often hold tension here without realising it. Step outside or
-look out a window — even 2-3 minutes of natural light can help reset your
-nervous system. Remember, stress is temporary and you have the strength to
-work through this moment.
-```
+The agent receives only the predicted label. Its built-in integration with a
+saved model (`--model ... --data ... --sample N`) supports the single-input
+Models A–D only; for Model G, obtain the label from `explain_model_g.py`.
 
 ---
 
 ## Explainability
 
-Two complementary gradient-based methods are applied:
+Two gradient-based methods are applied to Model G: the gradient magnitude
+|∂y/∂x| per input (unsigned) and Integrated Gradients (signed, from a baseline
+at the training mean, 50 steps). The mask that marks real beats is held fixed.
+Attributions are normalised by their maximum, so no feature is mapped to zero by
+construction.
 
-- **Gradient attribution** — absolute first-order gradients of the prediction with respect to each input feature
-- **Integrated Gradients** — directional attributions accumulated along the path from a zero baseline to the input
+What the analysis shows:
 
-SHAP is implemented in `Explainability.py` but **was not used** in the reported analysis: the two gradient-based methods converge on the same feature ranking, and SHAP's DeepExplainer carries disproportionate cost on an 8-feature input for no additional information.
+- **The model uses the order of the beats.** Replacing the series with its own
+  mean costs 12.17 pp of accuracy; removing the summary branch lowers accuracy
+  by 7.41 pp but leaves the ROC-AUC unchanged, so that branch only moves the
+  threshold.
+- **The mask carries heart rate.** Its length is the number of beats
+  (*r* = 0.98 with `hr_mean`, ROC-AUC 0.882 on its own), and neither method
+  attributes it.
+- **The model as a whole follows the physiology**: shortening every interval by
+  10% raises the predicted probability of stress in 87% of the windows.
+- **Per-feature attributions cannot be read one by one.** The summary features
+  are computed from the series the model also receives, and the effects learned
+  for `hr_mean`, `rmssd` and `nn50` run against the physiology when the series is
+  held fixed. They are conditional corrections, not effects of each feature.
+- The two methods disagree on rankings, as expected from what each measures, and
+  the Integrated Gradients baseline is not neutral: the model assigns 0.959 to a
+  window at the training mean.
 
-### Global feature importance
-
-| Rank | Feature | Importance |
-|------|---------|------------|
-| 1 | `nni_mean` | 1.000 |
-| 2 | `nni_min` | 0.941 |
-| 3 | `nn50` | 0.910 |
-| 4 | `sdnn` | 0.901 |
-| 5 | `nni_max` | 0.766 |
-| 6 | `hr_mean` | 0.741 |
-| 7 | `rmssd` | 0.554 |
-| 8 | `pnn50` | 0.541 |
-
-Shorter NN intervals and reduced variability are hallmarks of sympathetic activation, so this ranking aligns with the known physiology. The low ranking of `rmssd` and `pnn50` is corroborated by Castaldo et al. (2019), whose trend analysis found that RMSSD, NN50 and pNN50 cease to differ significantly between rest and stress once the excerpt is shortened to 30 seconds.
-
-### Explanation quality
-
-| Metric | Value | Interpretation |
-|--------|-------|----------------|
-| Faithfulness | 0.022 | Accuracy drop when masking the top-2 features (60.68% → 58.48%) |
-| Stability | 0.878 (SD 0.142) | Spearman correlation between attributions of an input and the same input perturbed with σ = 0.05 noise, over 300 comparisons |
-
-Read together these are mutually explanatory: the model identifies the same features consistently (high stability), yet removing them costs little accuracy (low faithfulness). Both follow from redundancy — `nni_mean`, `nni_min` and `nni_max` are different summaries of the same interval distribution.
-
----
-
-## Results
-
-Trained on 5,276 samples, evaluated on 1,320 held-out samples.
-
-**Model D confusion matrix:**
-
-|  | Predicted No Stress | Predicted Stress |
-|--|---------------------|------------------|
-| **Actual No Stress** | 230 (39.8%) | 348 (60.2%) |
-| **Actual Stress** | 171 (23.0%) | 571 (77.0%) |
-
-The bias toward stress detection is deliberate (see [class weighting](#class-weighting)). The cost is a specificity of 39.8% — a false alarm for three in five non-stressed windows — which is accepted for a wellness application but would not be acceptable clinically.
-
-Inference: ~63 ms per sample on CPU, negligible against a 30-second classification window.
+| Metric | Value | Meaning |
+|---|---|---|
+| Faithfulness | 0.027 | Accuracy drop when the top-2 summary features are set to the training mean |
+| Stability | 0.676 (summary) · 0.728 (series) | Mean Spearman correlation between attributions of an input and of the same input with σ = 0.05 noise |
 
 ---
 
-## Why ~60% accuracy?
+## AI feedback agent
 
-Studies reporting substantially higher figures operate under conditions a consumer wearable cannot reproduce: longer analysis windows, multiple physiological modalities, or evaluation protocols in which the same participant contributes to both training and test data.
+The agent turns a classification into a short lifestyle suggestion through the
+Anthropic API. The classifier and the agent are fully decoupled.
 
-The most directly relevant comparison is **Castaldo et al. (2019)**, [DOI: 10.1186/s12911-019-0742-y](https://doi.org/10.1186/s12911-019-0742-y), which extracted 23 HRV features from excerpts of 5, 3, 2, 1 and 0.5 minutes across 42 subjects. Two findings from that paper frame this project:
+**Only the predicted class crosses the API boundary.** No HRV values, no
+confidence score and no user identifier are sent. As a consequence, a
+prediction at 99% confidence and one at 51% produce identical requests.
 
-1. **The 30-second excerpts were excluded from their classification analysis**, on the grounds that too few features retained coherent behaviour with the 5-minute benchmark at that length.
-2. Their conclusion is that automatic stress detection from ultra-short HRV is feasible with excerpts **no shorter than one minute**. The ~88% accuracy they report is obtained at one minute, using MeanNN, StdHR and **HF** — the last a frequency-domain measure not computable below one minute at all.
+API calls have a 30-second timeout and handle timeouts, connection errors, HTTP
+errors and malformed responses. On any failure the agent returns locally held
+content for the predicted class, so the user still gets a usable message
+without connectivity.
 
-HRV30 therefore operates below the floor that the most methodologically rigorous study in this area identifies, and excludes by construction one of the three features that study's classifier depends on. That is a consequence of the deployment target, not an oversight: 30 seconds is what a smartwatch gives you.
+The model is configurable through `CLAUDE_MODEL` (default `claude-sonnet-5`).
+The earlier thesis revision used `claude-sonnet-4-20250514`, which the provider
+retired on 15 June 2026.
 
-**Known limitation.** The train/test split is random rather than subject-wise. No per-subject calibration is performed, but windows from the same participant may appear in both partitions. A leave-one-subject-out evaluation would give a stricter — and probably lower — estimate of generalisation.
+Example output for the stress label (WESAD test window 6, subject S7,
+classified as stress by Model G with probability above 0.999):
+
+```
+Your body's asking for a small reset — here are a few things that can help
+right now:
+1. Try box breathing — Inhale for 4 counts, hold for 4, exhale for 4, hold for
+   4. Repeat for 2-3 minutes.
+2. Unclench and drop your shoulders — Notice your jaw, hands, and shoulders.
+3. Step away for a 5-minute break, if you can.
+4. Ground yourself with your senses — Name 3 things you can see, 2 things you
+   can hear, and 1 thing you can feel.
+5. Sip some water slowly.
+You're doing great by checking in with yourself.
+```
+
+---
+
+## Limitations
+
+- **WESAD is small**: 15 subjects and 941 windows. Between-subject standard
+  deviations are large, so the models cannot be ranked against each other by
+  subject.
+- **SWELL-KW results include the relaxation phase.** The first ~8 minutes of
+  each block, a nature film, were not excluded. Excluding the first 16 windows
+  of each recording does not remove the inverted heart-rate effect (median
+  −5.44 bpm against −5.26 bpm, negative in 18 of 20 participants).
+- **Laboratory stressors only.** Neither dataset shows that the same
+  discrimination is achievable for everyday stressors.
+- **Feature-level explanations of Model G are not interpretable one by one**,
+  and the heart rate carried by the beat count is not attributed.
+- **The agent ignores confidence.** Only the predicted class reaches the API.
 
 ---
 
@@ -271,12 +450,9 @@ HRV30 therefore operates below the floor that the most methodologically rigorous
 Thesis document: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en).
 Code: please cite this work if you use the code or methodology.
 
----
-
 ## Acknowledgements
 
-- SWELL-KW dataset — Koldijk et al., Radboud University
-- WESAD dataset — Schmidt et al., University of Siegen
-- [pyHRV](https://pyhrv.readthedocs.io/) for HRV feature extraction
-- [BioSPPy](https://biosppy.readthedocs.io/) for ECG signal processing
+- WESAD — Schmidt et al., University of Siegen
+- SWELL-KW — Koldijk et al., Radboud University
+- [BioSPPy](https://biosppy.readthedocs.io/) and [pyHRV](https://pyhrv.readthedocs.io/)
 - Anthropic Claude API for the feedback agent
