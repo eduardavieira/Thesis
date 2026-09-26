@@ -8,13 +8,18 @@ so no treino. Definicoes dos classificadores iguais as do transfer_test.py.
 import numpy as np, pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score
+import argparse
+from sklearn.metrics import (accuracy_score, average_precision_score,
+                             confusion_matrix, roc_auc_score)
 from sklearn.model_selection import GroupKFold, LeaveOneGroupOut, train_test_split
 from sklearn.preprocessing import StandardScaler
 
 FEATURES = ["hr_mean", "nni_mean", "nni_min", "nni_max",
             "sdnn", "rmssd", "nn50", "pnn50"]
 CSV = "/home/eduarda/Desktop/ProcessedECGData_v5.csv"
+ap = argparse.ArgumentParser()
+ap.add_argument("--out", default="results_wesad_baselines.csv")
+OUT = ap.parse_args().out
 
 d = pd.read_csv(CSV).dropna(subset=FEATURES + ["label"])
 d = d[d["file"].str.contains("ECG_values")].reset_index(drop=True)   # WESAD
@@ -53,9 +58,14 @@ for cv in ("random", "group", "loso"):
         ytr, yte = y[itr], y[ite]
         maj = max(ytr.mean(), 1 - ytr.mean())
         pred_maj = np.full(len(yte), int(ytr.mean() > 0.5))
+        # O majority preve sempre a classe maioritaria do treino (nao-stress no
+        # WESAD): especificidade 100%, sensibilidade 0%. Como pontuacao e
+        # constante, a PR-AUC e a prevalencia de stress no teste.
+        tn, fp, fn, tp = confusion_matrix(yte, pred_maj, labels=[0, 1]).ravel()
         rows.append(dict(model="Majority", cv=cv, fold=k,
-                         acc=accuracy_score(yte, pred_maj) * 100, spec=np.nan,
-                         auc=0.5, major=maj * 100))
+                         acc=accuracy_score(yte, pred_maj) * 100,
+                         spec=tn / (tn + fp) * 100 if tn + fp else np.nan,
+                         auc=0.5, prauc=yte.mean(), major=maj * 100))
         for nm, mk in MK.items():
             m = mk().fit(xtr, ytr)
             pr = m.predict_proba(xte)[:, 1]
@@ -65,11 +75,12 @@ for cv in ("random", "group", "loso"):
                              acc=accuracy_score(yte, pred) * 100,
                              spec=tn / (tn + fp) * 100 if tn + fp else np.nan,
                              auc=roc_auc_score(yte, pr) if len(set(yte)) > 1 else np.nan,
+                             prauc=average_precision_score(yte, pr),
                              major=maj * 100))
 
 r = pd.DataFrame(rows)
-r.to_csv("results_wesad_baselines.csv", index=False)
+r.to_csv(OUT, index=False)
 for cv in ("random", "group", "loso"):
     print(f"\n== cv={cv}  ({r[r.cv==cv].fold.nunique()} folds)")
-    g = r[r.cv == cv].groupby("model")[["acc", "spec", "auc"]].agg(["mean", "std"])
+    g = r[r.cv == cv].groupby("model")[["acc", "spec", "auc", "prauc"]].agg(["mean", "std"])
     print(g.round(3))

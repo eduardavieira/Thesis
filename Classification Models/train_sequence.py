@@ -45,7 +45,8 @@ matplotlib.use("Agg")  # Models.py:176 faz plt.show(); sem isto bloqueia
 
 import tensorflow as tf
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
-                             precision_score, recall_score, roc_auc_score)
+                             precision_score, recall_score, roc_auc_score,
+                             average_precision_score)
 from sklearn.model_selection import GroupKFold, LeaveOneGroupOut, train_test_split
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.keras import layers as L
@@ -224,6 +225,7 @@ def main():
                  spec=tn / (tn + fp) * 100,
                  f1=f1_score(yte, pred),
                  auc=roc_auc_score(yte, prob),
+                 prauc=average_precision_score(yte, prob),
                  params=model.count_params(),
                  major=max(yte.mean(), 1 - yte.mean()) * 100)
         r["cv"] = a.cv
