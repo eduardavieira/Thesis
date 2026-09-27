@@ -1,0 +1,132 @@
+Ficheiros a processar : 96
+Gama de plausibilidade: 300-2000 ms (30-200 bpm)
+Desvio relativo max.  : 20% da mediana local
+Descartar janela acima: 20% de intervalos corrigidos
+Saida                 : /home/eduarda/Desktop/ProcessedECGData_v6.csv
+
+[1/96] S2_baseline_ECG_values.csv       label=0 38/38 janelas mantidas
+[2/96] S3_baseline_ECG_values.csv       label=0 38/38 janelas mantidas
+[3/96] S4_baseline_ECG_values.csv       label=0 38/38 janelas mantidas
+[4/96] S5_baseline_ECG_values.csv       label=0 39/39 janelas mantidas
+[5/96] S6_baseline_ECG_values.csv       label=0 39/39 janelas mantidas
+[6/96] S7_baseline_ECG_values.csv       label=0 39/39 janelas mantidas
+[7/96] S8_baseline_ECG_values.csv       label=0 38/38 janelas mantidas
+[8/96] S9_baseline_ECG_values.csv       label=0 39/39 janelas mantidas
+[9/96] S10_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[10/96] S11_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[11/96] S13_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[12/96] S14_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[13/96] S15_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[14/96] S16_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[15/96] S17_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[16/96] S1_neutral.csv                   label=0 117/117 janelas mantidas
+[17/96] S2_neutral.csv                   label=0 101/111 janelas mantidas
+[18/96] S3_neutral.csv                   label=0 21/84 janelas mantidas
+[19/96] S4_neutral.csv                   label=0 103/103 janelas mantidas
+[20/96] S5_neutral.csv                   label=0 98/107 janelas mantidas
+[21/96] S6_neutral.csv                   label=0 87/105 janelas mantidas
+[22/96] S7_neutral.csv                   label=0 59/59 janelas mantidas
+[23/96] S9_neutral.csv                   label=0 50/84 janelas mantidas
+[24/96] S10_neutral.csv                  label=0 95/105 janelas mantidas
+[25/96] S12_neutral.csv                  label=0 112/112 janelas mantidas
+[26/96] S13_neutral.csv                  label=0 46/86 janelas mantidas
+[27/96] S14_neutral.csv                  label=0 108/110 janelas mantidas
+[28/96] S15_neutral.csv                  label=0 109/110 janelas mantidas
+[29/96] S16_neutral.csv                  label=0 118/119 janelas mantidas
+[30/96] S17_neutral.csv                  label=0 90/110 janelas mantidas
+[31/96] S18_neutral.csv                  label=0 86/91 janelas mantidas
+[32/96] S19_neutral.csv                  label=0 17/97 janelas mantidas
+[33/96] S20_neutral.csv                  label=0 3/71 janelas mantidas
+[34/96] S21_neutral.csv                  label=0 115/115 janelas mantidas
+[35/96] S22_neutral.csv                  label=0 108/109 janelas mantidas
+[36/96] S24_neutral.csv                  label=0 40/98 janelas mantidas
+[37/96] S25_neutral.csv                  label=0 80/102 janelas mantidas
+[38/96] S2_stress_ECG_values.csv         label=1 20/20 janelas mantidas
+[39/96] S3_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[40/96] S4_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[41/96] S5_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[42/96] S6_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[43/96] S7_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[44/96] S8_stress_ECG_values.csv         label=1 22/22 janelas mantidas
+[45/96] S9_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[46/96] S10_stress_ECG_values.csv        label=1 24/24 janelas mantidas
+[47/96] S11_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[48/96] S13_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[49/96] S14_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[50/96] S15_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[51/96] S16_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[52/96] S17_stress_ECG_values.csv        label=1 24/24 janelas mantidas
+[53/96] S1_stress_I.csv                  label=1 106/112 janelas mantidas
+[54/96] S1_stress_T.csv                  label=1 54/70 janelas mantidas
+[55/96] S2_stress_I.csv                  label=1 94/94 janelas mantidas
+[56/96] S2_stress_T.csv                  label=1 75/75 janelas mantidas
+[57/96] S3_stress_I.csv                  label=1 66/95 janelas mantidas
+[58/96] S3_stress_T.csv                  label=1 72/77 janelas mantidas
+[59/96] S4_stress_I.csv                  label=1 43/46 janelas mantidas
+[60/96] S4_stress_T.csv                  label=1 55/71 janelas mantidas
+[61/96] S5_stress_I.csv                  label=1 66/98 janelas mantidas
+[62/96] S5_stress_T.csv                  label=1 25/53 janelas mantidas
+[63/96] S6_stress_I.csv                  label=1 102/103 janelas mantidas
+[64/96] S6_stress_T.csv                  label=1 60/71 janelas mantidas
+[65/96] S7_stress_T.csv                  label=1 79/79 janelas mantidas
+[66/96] S7_stress_I.csv                  label=1 109/109 janelas mantidas
+[67/96] S9_stress_I.csv                  label=1 83/96 janelas mantidas
+[68/96] S9_stress_T.csv                  label=1 57/73 janelas mantidas
+[69/96] S10_stress_I.csv                 label=1 10/80 janelas mantidas
+[70/96] S10_stress_T.csv                 label=1 78/78 janelas mantidas
+[71/96] S12_stress_I.csv                 label=1 79/103 janelas mantidas
+[72/96] S12_stress_T.csv                 label=1 0/30 janelas mantidas
+[73/96] S13_stress_I.csv                 label=1 65/91 janelas mantidas
+[74/96] S13_stress_T.csv                 label=1 75/77 janelas mantidas
+[75/96] S14_stress_I.csv                 label=1 108/108 janelas mantidas
+[76/96] S14_stress_T.csv                 label=1 42/68 janelas mantidas
+[77/96] S15_stress_I.csv                 label=1 82/93 janelas mantidas
+[78/96] S15_stress_T.csv                 label=1 25/55 janelas mantidas
+[79/96] S16_stress_I.csv                 label=1 110/110 janelas mantidas
+[80/96] S16_stress_T.csv                 label=1 68/70 janelas mantidas
+[81/96] S17_stress_I.csv                 label=1 109/109 janelas mantidas
+[82/96] S17_stress_T.csv                 label=1 78/78 janelas mantidas
+[83/96] S18_stress_I.csv                 label=1 106/107 janelas mantidas
+[84/96] S18_stress_T.csv                 label=1 69/75 janelas mantidas
+[85/96] S19_stress_I.csv                 label=1 111/111 janelas mantidas
+[86/96] S19_stress_T.csv                 label=1 33/64 janelas mantidas
+[87/96] S20_stress_I.csv                 label=1 58/93 janelas mantidas
+[88/96] S20_stress_T.csv                 label=1 19/32 janelas mantidas
+[89/96] S21_stress_I.csv                 label=1 54/62 janelas mantidas
+[90/96] S21_stress_T.csv                 label=1 75/75 janelas mantidas
+[91/96] S22_stress_I.csv                 label=1 35/37 janelas mantidas
+[92/96] S22_stress_T.csv                 label=1 14/52 janelas mantidas
+[93/96] S24_stress_I.csv                 label=1 0/52 janelas mantidas
+[94/96] S24_stress_T.csv                 label=1 78/78 janelas mantidas
+[95/96] S25_stress_I.csv                 label=1 8/49 janelas mantidas
+[96/96] S25_stress_T.csv                 label=1 4/52 janelas mantidas
+
+Tempo total: 0:43:18.915999
+
+Series NN: /home/eduarda/Desktop/NNSeries_v6.npz
+  matriz (5409, 73) (padding a zero)   comprimentos: min 21, mediana 35, max 73
+  NOTA: a ordem das linhas coincide com a do CSV.
+
+==================================================================
+ESTATISTICAS POR CLASSE
+==================================================================
+                                       nao-stress         stress
+  janelas mantidas                           2344           3065
+  descartadas (>20% corrigido)                442            672
+  descartadas (poucos intervalos)               0              0
+  descartadas (erro)                            0              0
+  intervalos RR analisados                 101353         131744
+  intervalos RR corrigidos                   7450          10636
+
+  nao-stress:
+    taxa de correccao          7.35%
+    cairiam na gama 500-1200   7.27%  <- o que a tese diz ter filtrado
+
+  stress:
+    taxa de correccao          8.07%
+    cairiam na gama 500-1200   11.15%  <- o que a tese diz ter filtrado
+
+  TOTAL de janelas no CSV: 5409  (a V4 tinha 6596)
+
+Escrito: /home/eduarda/Desktop/ProcessedECGData_v6.csv
+Apontar Classification Models/main.py:13 para este ficheiro.

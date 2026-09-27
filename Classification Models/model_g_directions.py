@@ -33,8 +33,14 @@ from sklearn.model_selection import train_test_split
 
 from train_sequence import FEATURES, build
 
-raw = pd.read_csv("/home/eduarda/Desktop/ProcessedECGData_v5.csv")
-M = np.load("/home/eduarda/Desktop/NNSeries_v5.npz")["nni"]
+import argparse
+_p = argparse.ArgumentParser()
+_p.add_argument("--csv", default="/home/eduarda/Desktop/ProcessedECGData_v5.csv")
+_p.add_argument("--series", default="/home/eduarda/Desktop/NNSeries_v5.npz")
+_p.add_argument("--weights", default="saved_models/wesad_model_G.weights.h5")
+_a = _p.parse_args()
+raw = pd.read_csv(_a.csv)
+M = np.load(_a.series)["nni"]
 keep = raw[FEATURES + ["label"]].notna().all(1).to_numpy() & raw.file.str.contains("ECG_values").to_numpy()
 raw, M = raw[keep].reset_index(drop=True), M[keep]
 Xf = raw[FEATURES].to_numpy(float)
@@ -51,7 +57,7 @@ K = (M[ite] > 0).astype("float32")[..., None]
 F = np.clip((Xf[ite] - fmu) / fsd, -5, 5).astype("float32")
 
 m = build("both", M.shape[1], len(FEATURES))
-m.load_weights("saved_models/wesad_model_G.weights.h5")
+m.load_weights(_a.weights)
 P = lambda s, k, f: m([s, k, f], training=False).numpy().flatten()
 p = P(S, K, F)
 

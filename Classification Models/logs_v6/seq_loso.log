@@ -1,0 +1,37 @@
+WARNING:tensorflow:5 out of the last 9 calls to <function Model.make_predict_function.<locals>.predict_function at 0x7f400850af70> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:6 out of the last 11 calls to <function Model.make_predict_function.<locals>.predict_function at 0x7f400850a8b0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+907 janelas, 35.94% stress
+serie NN: 73 passos max, comprimento real min 23 / mediana 37 / max 73
+arquitectura: seq   cv: loso
+LOSO: 15 folds, um por sujeito
+
+  fold 1: acc 39.68  prec 38.71  rec 100.00  spec 2.56  AUC 0.928  (1 sujeitos no teste)
+  fold 2: acc 100.00  prec 100.00  rec 100.00  spec 100.00  AUC 1.000  (1 sujeitos no teste)
+  fold 3: acc 57.38  prec 45.45  rec 90.91  spec 38.46  AUC 0.921  (1 sujeitos no teste)
+  fold 4: acc 98.36  prec 95.65  rec 100.00  spec 97.44  AUC 1.000  (1 sujeitos no teste)
+  fold 5: acc 75.41  prec 59.46  rec 100.00  spec 61.54  AUC 0.991  (1 sujeitos no teste)
+  fold 6: acc 100.00  prec 100.00  rec 100.00  spec 100.00  AUC 1.000  (1 sujeitos no teste)
+  fold 7: acc 92.06  prec 85.19  rec 95.83  spec 89.74  AUC 0.978  (1 sujeitos no teste)
+  fold 8: acc 68.97  prec 56.25  rec 45.00  spec 81.58  AUC 0.755  (1 sujeitos no teste)
+  fold 9: acc 93.22  prec 100.00  rec 80.95  spec 100.00  AUC 1.000  (1 sujeitos no teste)
+  fold 10: acc 88.14  prec 100.00  rec 66.67  spec 100.00  AUC 0.996  (1 sujeitos no teste)
+  fold 11: acc 66.67  prec 100.00  rec 4.76  spec 100.00  AUC 0.707  (1 sujeitos no teste)
+  fold 12: acc 100.00  prec 100.00  rec 100.00  spec 100.00  AUC 1.000  (1 sujeitos no teste)
+  fold 13: acc 96.67  prec 95.24  rec 95.24  spec 97.44  AUC 0.998  (1 sujeitos no teste)
+  fold 14: acc 93.33  prec 100.00  rec 81.82  spec 100.00  AUC 1.000  (1 sujeitos no teste)
+  fold 15: acc 70.00  prec 53.85  rec 100.00  spec 53.85  AUC 0.901  (1 sujeitos no teste)
+
+==================================================================
+SEQ  (5 seeds)
+==================================================================
+  metrica          media      SD      min      max
+  accuracy        82.659  18.576   39.683  100.000
+  precision       81.986  23.624   38.710  100.000
+  recall          84.079  27.019    4.762  100.000
+  specificity     81.507  29.542    2.564  100.000
+  ROC-AUC          0.945   0.093    0.707    1.000
+
+  parametros: 27,969
+  majority  : 64.08%
+
+  Referencias (V5, 5 seeds): RandomForest 63.72 | Model C 61.95 | Model D 61.18 | LogReg 59.50

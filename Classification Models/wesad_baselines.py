@@ -16,10 +16,11 @@ from sklearn.preprocessing import StandardScaler
 
 FEATURES = ["hr_mean", "nni_mean", "nni_min", "nni_max",
             "sdnn", "rmssd", "nn50", "pnn50"]
-CSV = "/home/eduarda/Desktop/ProcessedECGData_v5.csv"
 ap = argparse.ArgumentParser()
 ap.add_argument("--out", default="results_wesad_baselines.csv")
-OUT = ap.parse_args().out
+ap.add_argument("--csv", default="/home/eduarda/Desktop/ProcessedECGData_v5.csv")
+_args = ap.parse_args()
+OUT, CSV = _args.out, _args.csv
 
 d = pd.read_csv(CSV).dropna(subset=FEATURES + ["label"])
 d = d[d["file"].str.contains("ECG_values")].reset_index(drop=True)   # WESAD
@@ -65,6 +66,7 @@ for cv in ("random", "group", "loso"):
         rows.append(dict(model="Majority", cv=cv, fold=k,
                          acc=accuracy_score(yte, pred_maj) * 100,
                          spec=tn / (tn + fp) * 100 if tn + fp else np.nan,
+                         rec=tp / (tp + fn) * 100 if tp + fn else np.nan,
                          auc=0.5, prauc=yte.mean(), major=maj * 100))
         for nm, mk in MK.items():
             m = mk().fit(xtr, ytr)
@@ -74,6 +76,7 @@ for cv in ("random", "group", "loso"):
             rows.append(dict(model=nm, cv=cv, fold=k,
                              acc=accuracy_score(yte, pred) * 100,
                              spec=tn / (tn + fp) * 100 if tn + fp else np.nan,
+                             rec=tp / (tp + fn) * 100 if tp + fn else np.nan,
                              auc=roc_auc_score(yte, pr) if len(set(yte)) > 1 else np.nan,
                              prauc=average_precision_score(yte, pr),
                              major=maj * 100))

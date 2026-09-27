@@ -1,0 +1,92 @@
+
+=========== random
+  Majority classifier          acc  64.29 ±  0.00  spec 100.00  auc 0.500 ± 0.000  prauc 0.357 ± 0.000  CI auc [0.500, 0.500]
+  Logistic regression          acc  82.64 ±  2.54  spec  89.57  auc 0.922 ± 0.023  prauc 0.887 ± 0.027  CI auc [0.894, 0.951]
+  Random forest                acc  86.70 ±  1.19  spec  92.14  auc 0.941 ± 0.020  prauc 0.910 ± 0.020  CI auc [0.915, 0.966]
+  Model E (Summary MLP)        acc  87.25 ±  0.98  spec  91.11  auc 0.935 ± 0.017  prauc 0.911 ± 0.019  CI auc [0.914, 0.956]
+  Model A (LSTM)               acc  79.78 ±  4.06  spec  76.58  auc 0.922 ± 0.014  prauc 0.891 ± 0.020  CI auc [0.904, 0.940]
+  Model B (Deep LSTM)          acc  81.21 ±  4.91  spec  77.61  auc 0.918 ± 0.031  prauc 0.881 ± 0.043  CI auc [0.880, 0.956]
+  Model C (CNN-LSTM)           acc  84.51 ±  3.71  spec  85.47  auc 0.934 ± 0.019  prauc 0.909 ± 0.023  CI auc [0.910, 0.958]
+  Model D (CNN-Transformer)    acc  85.71 ±  2.30  spec  89.74  auc 0.929 ± 0.019  prauc 0.899 ± 0.024  CI auc [0.906, 0.952]
+  Model F (Sequence CNN)       acc  90.44 ±  1.81  spec  94.36  auc 0.965 ± 0.006  prauc 0.952 ± 0.008  CI auc [0.958, 0.973]
+  Model G (Dual-Input CNN)     acc  89.78 ±  2.08  spec  94.36  auc 0.955 ± 0.024  prauc 0.940 ± 0.028  CI auc [0.926, 0.985]
+  ranking auc: Model F 0.965, Model G 0.955, Random forest 0.941, Model E 0.935, Model C 0.934, Model D 0.929, Model A 0.922, Logistic regression 0.922, Model B 0.918
+  ranking acc: Model F 90.440, Model G 89.780, Model E 87.253, Random forest 86.703, Model D 85.714, Model C 84.505, Logistic regression 82.637, Model B 81.209, Model A 79.780
+  ranking prauc: Model F 0.952, Model G 0.940, Model E 0.911, Random forest 0.910, Model C 0.909, Model D 0.899, Model A 0.891, Logistic regression 0.887, Model B 0.881
+
+=========== group
+  Majority classifier          acc  64.06 ±  0.54  spec 100.00  auc 0.500 ± 0.000  prauc 0.359 ± 0.005  CI auc [0.500, 0.500]
+  Logistic regression          acc  83.78 ± 10.82  spec  89.31  auc 0.913 ± 0.087  prauc 0.889 ± 0.105  CI auc [0.805, 1.021]
+  Random forest                acc  81.14 ±  9.50  spec  84.87  auc 0.882 ± 0.112  prauc 0.824 ± 0.187  CI auc [0.743, 1.021]
+  Model E (Summary MLP)        acc  80.58 ± 11.40  spec  79.37  auc 0.908 ± 0.071  prauc 0.889 ± 0.088  CI auc [0.819, 0.996]
+  Model A (LSTM)               acc  78.04 ± 10.84  spec  76.09  auc 0.891 ± 0.098  prauc 0.852 ± 0.144  CI auc [0.769, 1.012]
+  Model B (Deep LSTM)          acc  75.17 ± 11.45  spec  74.20  auc 0.878 ± 0.084  prauc 0.843 ± 0.097  CI auc [0.773, 0.983]
+  Model C (CNN-LSTM)           acc  79.81 ± 10.83  spec  78.32  auc 0.897 ± 0.091  prauc 0.872 ± 0.104  CI auc [0.783, 1.010]
+  Model D (CNN-Transformer)    acc  81.80 ± 10.09  spec  84.34  auc 0.902 ± 0.067  prauc 0.870 ± 0.077  CI auc [0.819, 0.986]
+  Model F (Sequence CNN)       acc  79.03 ± 12.95  spec  77.34  auc 0.903 ± 0.075  prauc 0.879 ± 0.098  CI auc [0.811, 0.996]
+  Model G (Dual-Input CNN)     acc  80.14 ± 11.27  spec  79.75  auc 0.919 ± 0.063  prauc 0.900 ± 0.075  CI auc [0.841, 0.998]
+  ranking auc: Model G 0.919, Logistic regression 0.913, Model E 0.908, Model F 0.903, Model D 0.902, Model C 0.897, Model A 0.891, Random forest 0.882, Model B 0.878
+  ranking acc: Logistic regression 83.779, Model D 81.798, Random forest 81.138, Model E 80.580, Model G 80.138, Model C 79.808, Model F 79.030, Model A 78.038, Model B 75.166
+  ranking prauc: Model G 0.900, Model E 0.889, Logistic regression 0.889, Model F 0.879, Model C 0.872, Model D 0.870, Model A 0.852, Model B 0.843, Random forest 0.824
+
+=========== loso
+  Majority classifier          acc  64.08 ±  1.06  spec 100.00  auc 0.500 ± 0.000  prauc 0.359 ± 0.011  CI auc [0.500, 0.500]
+  Logistic regression          acc  82.60 ± 16.84  spec  88.18  auc 0.939 ± 0.136  prauc 0.921 ± 0.166  CI auc [0.864, 1.014]
+  Random forest                acc  81.06 ± 16.45  spec  85.26  auc 0.913 ± 0.127  prauc 0.875 ± 0.184  CI auc [0.842, 0.983]
+  Model E (Summary MLP)        acc  79.81 ± 17.70  spec  78.23  auc 0.946 ± 0.080  prauc 0.925 ± 0.138  CI auc [0.901, 0.990]
+  Model A (LSTM)               acc  74.75 ± 22.91  spec  69.69  auc 0.947 ± 0.094  prauc 0.923 ± 0.147  CI auc [0.895, 0.999]
+  Model B (Deep LSTM)          acc  75.37 ± 18.93  spec  73.98  auc 0.943 ± 0.096  prauc 0.904 ± 0.168  CI auc [0.889, 0.996]
+  Model C (CNN-LSTM)           acc  80.88 ± 16.66  spec  79.27  auc 0.950 ± 0.080  prauc 0.917 ± 0.137  CI auc [0.905, 0.994]
+  Model D (CNN-Transformer)    acc  79.98 ± 16.54  spec  80.13  auc 0.945 ± 0.075  prauc 0.915 ± 0.131  CI auc [0.904, 0.987]
+  Model F (Sequence CNN)       acc  82.66 ± 18.58  spec  81.51  auc 0.945 ± 0.093  prauc 0.923 ± 0.140  CI auc [0.893, 0.997]
+  Model G (Dual-Input CNN)     acc  83.74 ± 16.52  spec  83.91  auc 0.970 ± 0.047  prauc 0.955 ± 0.087  CI auc [0.944, 0.996]
+  ranking auc: Model G 0.970, Model C 0.950, Model A 0.947, Model E 0.946, Model D 0.945, Model F 0.945, Model B 0.943, Logistic regression 0.939, Random forest 0.913
+  ranking acc: Model G 83.745, Model F 82.659, Logistic regression 82.601, Random forest 81.059, Model C 80.879, Model D 79.984, Model E 79.806, Model B 75.370, Model A 74.749
+  ranking prauc: Model G 0.955, Model E 0.925, Model A 0.923, Model F 0.923, Logistic regression 0.921, Model C 0.917, Model D 0.915, Model B 0.904, Random forest 0.875
+
+=========== RANDOM: planeado, Holm (familia = 7 modelos de resumo)
+  Model G acc: Model A +10.000 p=0.0009 adj=0.007*  Model B +8.571 p=0.0051 adj=0.026*  Model C +5.275 p=0.0026 adj=0.016*  Model D +4.066 p=0.0172 adj=0.052  Model E +2.527 p=0.0280 adj=0.056  Logistic regression +7.143 p=0.0094 adj=0.038*  Random forest +3.077 p=0.0586 adj=0.059
+  Model G auc: Model A +0.033 p=0.0047 adj=0.025*  Model B +0.037 p=0.0023 adj=0.016*  Model C +0.021 p=0.0241 adj=0.048*  Model D +0.026 p=0.0042 adj=0.025*  Model E +0.020 p=0.0142 adj=0.044*  Logistic regression +0.033 p=0.0110 adj=0.044*  Random forest +0.015 p=0.0971 adj=0.097
+  Model G prauc: Model A +0.049 p=0.0025 adj=0.015*  Model B +0.059 p=0.0019 adj=0.014*  Model C +0.031 p=0.0131 adj=0.031*  Model D +0.041 p=0.0033 adj=0.017*  Model E +0.029 p=0.0165 adj=0.031*  Logistic regression +0.053 p=0.0040 adj=0.017*  Random forest +0.030 p=0.0102 adj=0.031*
+  Model F acc: Model A +10.659 p=0.0102 adj=0.041*  Model B +9.231 p=0.0132 adj=0.041*  Model C +5.934 p=0.0336 adj=0.041*  Model D +4.725 p=0.0032 adj=0.016*  Model E +3.187 p=0.0166 adj=0.041*  Logistic regression +7.802 p=0.0012 adj=0.007*  Random forest +3.736 p=0.0008 adj=0.005*
+  Model F auc: Model A +0.043 p=0.0005 adj=0.004*  Model B +0.047 p=0.0138 adj=0.032*  Model C +0.031 p=0.0082 adj=0.032*  Model D +0.036 p=0.0033 adj=0.020*  Model E +0.031 p=0.0038 adj=0.020*  Logistic regression +0.043 p=0.0080 adj=0.032*  Random forest +0.025 p=0.0218 adj=0.032*
+  Model F prauc: Model A +0.061 p=0.0006 adj=0.004*  Model B +0.070 p=0.0132 adj=0.013*  Model C +0.043 p=0.0042 adj=0.010*  Model D +0.053 p=0.0023 adj=0.010*  Model E +0.041 p=0.0018 adj=0.010*  Logistic regression +0.065 p=0.0023 adj=0.010*  Random forest +0.042 p=0.0016 adj=0.010*
+  Model G-Model F acc: -0.659 p=0.651
+  Model G-Model F auc: -0.010 p=0.302
+  Model D-Model C acc: +1.209 p=0.403
+  Model D-Model C auc: -0.005 p=0.200
+  G seed 42 (linha da CSV): acc 90.66
+
+=========== SUBJECT-WISE: 36 pares, Holm por protocolo e metrica
+  group acc: 0 pares p<0.05 sem correcao; min p ajustado 1.000; sobrevivem: nenhum
+  group auc: 0 pares p<0.05 sem correcao; min p ajustado 1.000; sobrevivem: nenhum
+  group prauc: 0 pares p<0.05 sem correcao; min p ajustado 1.000; sobrevivem: nenhum
+  group Logistic regression-Model D auc +0.011 p=0.567
+  group Model G-Model D auc +0.017 p=0.208
+  group Logistic regression-Model G auc -0.006 p=0.747
+  loso acc: 4 pares p<0.05 sem correcao; min p ajustado 0.565; sobrevivem: nenhum
+  loso auc: 3 pares p<0.05 sem correcao; min p ajustado 0.458; sobrevivem: nenhum
+  loso prauc: 2 pares p<0.05 sem correcao; min p ajustado 0.567; sobrevivem: nenhum
+  loso Logistic regression-Model D auc -0.006 p=0.781
+  loso Model G-Model D auc +0.025 p=0.013
+  loso Logistic regression-Model G auc -0.031 p=0.245
+
+=========== quedas de exatidao aleatorio -> GroupKFold / LOSO
+  group: -1.14 (Logistic regression) a 11.41 (Model F)
+  loso: 0.04 (Logistic regression) a 7.78 (Model F)
+  group: AUC 0.878-0.919, SD 0.063-0.112
+  loso: AUC 0.913-0.970, SD 0.047-0.136
+
+=========== LOSO por sujeito (fold 0 = S10)
+  Logistic regression          S10: auc 0.895 spec 0.00 acc 38.10 | gama acc 38.1-100.0 spec 0.0-100.0
+  Random forest                S10: auc 0.586 spec 5.13 acc 41.27 | gama acc 41.3-100.0 spec 5.1-100.0
+  Model E (Summary MLP)        S10: auc 0.862 spec 0.00 acc 38.10 | gama acc 38.1-100.0 spec 0.0-100.0
+  Model A (LSTM)               S10: auc 0.863 spec 0.00 acc 38.10 | gama acc 36.1-100.0 spec 0.0-100.0
+  Model B (Deep LSTM)          S10: auc 0.963 spec 5.13 acc 41.27 | gama acc 41.3-100.0 spec 5.1-100.0
+  Model C (CNN-LSTM)           S10: auc 0.937 spec 2.56 acc 39.68 | gama acc 39.7-100.0 spec 2.6-100.0
+  Model D (CNN-Transformer)    S10: auc 0.849 spec 7.69 acc 42.86 | gama acc 42.9-100.0 spec 7.7-100.0
+  Model F (Sequence CNN)       S10: auc 0.928 spec 2.56 acc 39.68 | gama acc 39.7-100.0 spec 2.6-100.0
+  Model G (Dual-Input CNN)     S10: auc 0.897 spec 5.13 acc 39.68 | gama acc 39.7-100.0 spec 5.1-100.0
+  todas: acc 36.1-100.0  spec 0.0-100.0
+
+  AUC subject-wise de todos os treinados: 0.878-0.970

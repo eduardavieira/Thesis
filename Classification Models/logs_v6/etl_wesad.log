@@ -1,0 +1,66 @@
+Ficheiros a processar : 30
+Gama de plausibilidade: 300-2000 ms (30-200 bpm)
+Desvio relativo max.  : 20% da mediana local
+Descartar janela acima: 20% de intervalos corrigidos
+Saida                 : /home/eduarda/Desktop/ProcessedECGData_v6_wesad.csv
+
+[1/30] S2_baseline_ECG_values.csv       label=0 38/38 janelas mantidas
+[2/30] S3_baseline_ECG_values.csv       label=0 38/38 janelas mantidas
+[3/30] S4_baseline_ECG_values.csv       label=0 38/38 janelas mantidas
+[4/30] S5_baseline_ECG_values.csv       label=0 39/39 janelas mantidas
+[5/30] S6_baseline_ECG_values.csv       label=0 39/39 janelas mantidas
+[6/30] S7_baseline_ECG_values.csv       label=0 39/39 janelas mantidas
+[7/30] S8_baseline_ECG_values.csv       label=0 38/38 janelas mantidas
+[8/30] S9_baseline_ECG_values.csv       label=0 39/39 janelas mantidas
+[9/30] S10_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[10/30] S11_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[11/30] S13_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[12/30] S14_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[13/30] S15_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[14/30] S16_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[15/30] S17_baseline_ECG_values.csv      label=0 39/39 janelas mantidas
+[16/30] S2_stress_ECG_values.csv         label=1 20/20 janelas mantidas
+[17/30] S3_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[18/30] S4_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[19/30] S5_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[20/30] S6_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[21/30] S7_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[22/30] S8_stress_ECG_values.csv         label=1 22/22 janelas mantidas
+[23/30] S9_stress_ECG_values.csv         label=1 21/21 janelas mantidas
+[24/30] S10_stress_ECG_values.csv        label=1 24/24 janelas mantidas
+[25/30] S11_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[26/30] S13_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[27/30] S14_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[28/30] S15_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[29/30] S16_stress_ECG_values.csv        label=1 22/22 janelas mantidas
+[30/30] S17_stress_ECG_values.csv        label=1 24/24 janelas mantidas
+
+Tempo total: 0:01:26.710053
+
+Series NN: /home/eduarda/Desktop/NNSeries_v6_wesad.npz
+  matriz (907, 73) (padding a zero)   comprimentos: min 23, mediana 37, max 73
+  NOTA: a ordem das linhas coincide com a do CSV.
+
+==================================================================
+ESTATISTICAS POR CLASSE
+==================================================================
+                                       nao-stress         stress
+  janelas mantidas                            581            326
+  descartadas (>20% corrigido)                  0              0
+  descartadas (poucos intervalos)               0              0
+  descartadas (erro)                            0              0
+  intervalos RR analisados                  20231          15593
+  intervalos RR corrigidos                     72            155
+
+  nao-stress:
+    taxa de correccao          0.36%
+    cairiam na gama 500-1200   1.30%  <- o que a tese diz ter filtrado
+
+  stress:
+    taxa de correccao          0.99%
+    cairiam na gama 500-1200   27.97%  <- o que a tese diz ter filtrado
+
+  TOTAL de janelas no CSV: 907  (a V4 tinha 6596)
+
+Escrito: /home/eduarda/Desktop/ProcessedECGData_v6_wesad.csv
+Apontar Classification Models/main.py:13 para este ficheiro.

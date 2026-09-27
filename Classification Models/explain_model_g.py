@@ -167,7 +167,7 @@ order = np.argsort(imp_n)
 fig, ax = plt.subplots(figsize=(9, 5))
 ax.barh([FEATURES[i] for i in order], imp_n[order], color="#2c7fb8")
 ax.set_xlabel("Mean Gradient Magnitude (Normalised)", fontweight="bold")
-ax.set_title("Model G: global importance of the summary features (WESAD test, N=189)",
+ax.set_title(f"Model G: global importance of the summary features (WESAD test, N={len(yte)})",
              fontweight="bold")
 ax.grid(axis="x", alpha=0.3)
 plt.tight_layout(); plt.savefig(f"{a.out}/feature_importance_global_G.png", dpi=300); plt.close()
@@ -189,7 +189,7 @@ ax.bar(xp - w/2, means[1], w, yerr=sems[1], capsize=3, label="Stress windows", c
 ax.bar(xp + w/2, means[0], w, yerr=sems[0], capsize=3, label="No-stress windows", color="#3498db")
 ax.set_xticks(xp); ax.set_xticklabels(FEATURES, rotation=45, ha="right")
 ax.set_ylabel("Mean Gradient Magnitude (Normalised)", fontweight="bold")
-ax.set_title("Model G: gradient attribution by class (WESAD test, N=189)", fontweight="bold")
+ax.set_title(f"Model G: gradient attribution by class (WESAD test, N={len(yte)})", fontweight="bold")
 ax.legend(); ax.grid(axis="y", alpha=0.3)
 plt.tight_layout(); plt.savefig(f"{a.out}/gradient_by_class_mean_G.png", dpi=300); plt.close()
 
@@ -333,8 +333,10 @@ for name, idx in cases.items():
     a2.set_xlabel("Beat", fontweight="bold"); a2.set_ylabel("NN interval (ms)", fontweight="bold")
     a2.set_title(f"NN series branch, total {igS.sum():+.3f}", fontweight="bold")
     a2.grid(alpha=0.3)
-    fig.suptitle(f"{name.replace('_', ' ')} · {files_te[i]} · "
-                 f"P(stress) = {prob[i]:.3f}", fontweight="bold")
+    # Titulo legivel na tese: "Subject S2, baseline" em vez do nome do ficheiro
+    subj, cond = files_te[i].split("_")[0], files_te[i].split("_")[1]
+    fig.suptitle(f"{name.replace('_', ' ').replace('high conf', 'high confidence').capitalize()}"
+                 f" · Subject {subj}, {cond} · P(stress) = {prob[i]:.3f}", fontweight="bold")
     plt.tight_layout(); plt.savefig(f"{a.out}/{name}_G.png", dpi=300); plt.close()
 pd.DataFrame(rows).to_csv(f"{a.out}/case_studies_G.csv", index=False)
 

@@ -1,0 +1,134 @@
+WESAD: 907 janelas, 35.94% stress
+Pesos carregados de saved_models/wesad_model_G_v6.weights.h5
+
+==============================================================
+1. MATRIZ DE CONFUSAO (Model G, seed 42, N=182)
+==============================================================
+                     Prev: nao-stress   Prev: stress
+  Real: nao-stress              112              5
+  Real: stress                   11             54
+  acc 91.21  prec 91.53  rec 83.08  spec 95.73  AUC 0.965  params 32,929
+
+==============================================================
+2. IMPORTANCIA GLOBAL (|dy/dF| medio, dividido pelo maximo)
+==============================================================
+  sdnn      1.000
+  nn50      0.876
+  nni_max   0.775
+  nni_mean  0.627
+  nni_min   0.618
+  pnn50     0.577
+  hr_mean   0.532
+  rmssd     0.518
+  top-3 = 48.0% da massa; razao 1.a/ultima 1.93
+
+  por classe real (media +/- EP, escala comum):
+  feature            stress      nao-stress  sobrepoe?
+  hr_mean     0.678+/-0.169   0.451+/-0.061   sim
+  nni_mean    0.658+/-0.124   0.609+/-0.072   sim
+  nni_min     0.654+/-0.122   0.599+/-0.066   sim
+  nni_max     0.977+/-0.199   0.662+/-0.100   NAO
+  sdnn        0.888+/-0.183   1.062+/-0.122   sim
+  rmssd       0.580+/-0.119   0.483+/-0.060   sim
+  nn50        0.930+/-0.162   0.846+/-0.107   sim
+  pnn50       0.436+/-0.077   0.655+/-0.084   NAO
+
+==============================================================
+3. INTEGRATED GRADIENTS
+==============================================================
+  f(baseline): media 0.9161  min 0.9118  max 0.9190  (varia com o comprimento da mascara)
+  erro de completude: mediana 0.0062  max 0.0840
+  fraccao |IG serie| / (|IG serie| + |IG resumo|):
+    todas       media 0.707  mediana 0.720  [0.554, 0.907]
+    stress      media 0.552  mediana 0.562  [0.482, 0.621]
+    nao-stress  media 0.794  mediana 0.880  [0.619, 0.932]
+  |IG| medio por feature resumo:
+    sdnn      0.0744
+    nn50      0.0612
+    hr_mean   0.0537
+    nni_max   0.0535
+    nni_mean  0.0494
+    nni_min   0.0377
+    rmssd     0.0310
+    pnn50     0.0288
+
+==============================================================
+4. ABLACAO POR RAMO
+==============================================================
+  intacto                                      acc  91.21  AUC 0.965  (queda +0.00 pp)
+  serie = media da propria janela (sem dinamica) acc  74.18  AUC 0.842  (queda +17.03 pp)
+  serie na baseline                            acc  42.31  AUC 0.520  (queda +48.90 pp)
+  resumo na baseline                           acc  78.57  AUC 0.949  (queda +12.64 pp)
+  ambos na baseline                            acc  35.71  AUC 0.889  (queda +55.49 pp)
+
+==============================================================
+5. FIDELIDADE E ESTABILIDADE (protocolos do Model D)
+==============================================================
+  top-2 resumo: ['nn50', 'sdnn']
+  fidelidade: 0.9121 -> 0.8077, queda 0.1044
+  estabilidade resumo: 0.7292 (SD 0.3022, n=300)
+  estabilidade serie : 0.6812 (SD 0.1765, n=300)
+
+==============================================================
+6. ESTUDOS DE CASO
+==============================================================
+  contagens: TP p>0,8 46 · TN p<0,2 74 · FP 5 · FN 11
+
+  true_positive_high_conf: indice 3, S8_stress_ECG_values.csv, p=0.868, 47 batimentos
+    IG total: serie +0.0958  resumo -0.1383  (f(base)=0.917; fracao serie 0.41)
+    feature       bruto       z  |grad|/max        IG
+    nni_max      731.00   -0.88        0.87   +0.1125
+    nn50           3.00   -0.68        0.63   -0.0991
+    hr_mean       96.97   +0.75        0.80   -0.0931
+    nni_mean     622.26   -0.92        0.85   -0.0924
+    nni_min      548.00   -0.91        0.37   +0.0621
+    rmssd         24.27   -0.68        0.80   -0.0384
+    sdnn          47.92   -0.40        0.99   +0.0237
+    pnn50          6.52   -0.74        1.00   -0.0136
+    batimento com maior |IG|: #9 (564 ms, IG +0.1404); intervalo min 548 no #38
+
+  true_negative_high_conf: indice 0, S7_baseline_ECG_values.csv, p=0.015, 31 batimentos
+    IG total: serie -0.8810  resumo -0.0514  (f(base)=0.915; fracao serie 0.94)
+    feature       bruto       z  |grad|/max        IG
+    sdnn          77.90   +0.65        1.00   -0.1798
+    hr_mean       65.35   -0.86        0.72   +0.1478
+    nni_max     1064.00   +0.90        0.09   -0.0475
+    nni_mean     924.84   +0.95        0.03   -0.0195
+    nni_min      765.00   +0.75        0.61   +0.0168
+    rmssd         51.27   +0.32        0.11   +0.0126
+    nn50           8.00   +0.17        0.29   +0.0124
+    pnn50         26.67   +0.24        0.01   +0.0057
+    batimento com maior |IG|: #8 (1064 ms, IG -0.2729); intervalo min 765 no #25
+
+  false_positive: indice 8, S17_baseline_ECG_values.csv, p=0.628, 38 batimentos
+    IG total: serie -0.0860  resumo -0.1882  (f(base)=0.916; fracao serie 0.31)
+    feature       bruto       z  |grad|/max        IG
+    sdnn         156.69   +3.40        0.65   -0.3315
+    nn50          11.00   +0.67        1.00   +0.1443
+    nni_max     1065.00   +0.90        0.04   -0.1119
+    nni_min      577.00   -0.69        0.86   +0.1060
+    rmssd         68.10   +0.94        0.06   +0.0255
+    nni_mean     755.74   -0.10        0.47   -0.0121
+    pnn50         29.73   +0.39        0.04   -0.0084
+    hr_mean       82.51   +0.01        0.04   -0.0001
+    batimento com maior |IG|: #25 (1065 ms, IG -0.2432); intervalo min 577 no #1
+
+  false_negative: indice 32, S2_stress_ECG_values.csv, p=0.382, 36 batimentos
+    IG total: serie -0.4187  resumo -0.1169  (f(base)=0.916; fracao serie 0.78)
+    feature       bruto       z  |grad|/max        IG
+    sdnn          36.16   -0.81        0.45   -0.1450
+    hr_mean       74.72   -0.38        0.98   +0.0474
+    pnn50         17.14   -0.22        1.00   -0.0294
+    nni_mean     804.56   +0.21        0.20   +0.0071
+    rmssd         36.76   -0.22        0.34   +0.0053
+    nni_max      902.00   +0.03        0.61   -0.0039
+    nni_min      722.00   +0.42        0.31   +0.0029
+    nn50           6.00   -0.17        0.01   -0.0013
+    batimento com maior |IG|: #17 (850 ms, IG -0.1036); intervalo min 722 no #13
+
+==============================================================
+7. LATENCIA
+==============================================================
+  model.predict, 1 janela, 1000 corridas: 54.38 ms por janela
+
+Figuras e CSVs em results/model_G_v6/

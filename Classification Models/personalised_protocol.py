@@ -19,6 +19,12 @@ tempo entre calibracao e teste, o que e fuga de sessao e daria um resultado
 optimista.
 
     PYTHONPATH=. python3 personalised_protocol.py [--models D,LogReg,RF] [--frac 0.5]
+
+V6 (2026-09-27): Model G (serie NN + mascara + resumo, receita do train_sequence.py)
+e LogReg com o StandardScaler das baselines da tese:
+    python3 personalised_protocol.py --csv .../ProcessedECGData_v6_wesad.csv \
+        --series .../NNSeries_v6_wesad.npz --models G,LogReg --scaler standard \
+        --out results_v6_personalised.csv
 """
 import argparse, contextlib, io, os, warnings
 warnings.filterwarnings("ignore"); os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -45,10 +51,20 @@ p.add_argument("--frac", type=float, default=0.5,
                     "calibrar (default 0,5)")
 p.add_argument("--epochs", type=int, default=150)
 p.add_argument("--out", default="results_personalised.csv")
+p.add_argument("--series", default=None, help=".npz das series NN (obrigatorio para o Model G)")
+p.add_argument("--scaler", default="iqr", choices=["iqr", "standard"],
+               help="iqr = normalize_data() do Data.py (corrida V5); standard = "
+                    "StandardScaler ajustado no treino, como nas baselines da tese")
 a = p.parse_args()
 
-d = pd.read_csv(a.csv).dropna(subset=FEATURES + ["label"])
-d = d[d["file"].str.contains("ECG_values")].reset_index(drop=True)
+d = pd.read_csv(a.csv)
+if a.series:
+    Z = np.load(a.series)
+    if len(Z["nni"]) != len(d):
+        raise SystemExit("CSV e .npz com numero de linhas diferente")
+keep = (d[FEATURES + ["label"]].notna().all(axis=1) & d["file"].str.contains("ECG_values")).to_numpy()
+d = d[keep].reset_index(drop=True)
+M = Z["nni"][keep] if a.series else None
 X = d[FEATURES].to_numpy(float)
 y = d["label"].to_numpy().astype(int)
 subj = d["file"].str.extract(r"^(S\d+)")[0].to_numpy()
@@ -114,6 +130,45 @@ def fit_deep(xtr, ytr, xev, seed, epochs):
     return m.predict(xev, verbose=0).flatten()
 
 
+def fit_g(itr, iev, seed, epochs=100):
+    """Model G com a receita do train_sequence.py / explain_model_g.py.
+
+    Normalizacao so com as janelas de treino: serie pela media e DP dos
+    intervalos reais (padding fica a 0), resumo pela media e DP, cortado a +/-5.
+    """
+    from train_sequence import build
+    tf.keras.backend.clear_session()
+    tf.random.set_seed(seed); np.random.seed(seed)
+    itr = np.random.permutation(itr)            # validation_split corta os ultimos 20%
+    real = M[itr] > 0
+    mu, sd = M[itr][real].mean(), M[itr][real].std()
+    fmu, fsd = X[itr].mean(0), X[itr].std(0)
+    S = lambda i: np.where(M[i] > 0, (M[i] - mu) / sd, 0.0)[..., None].astype("float32")
+    K = lambda i: (M[i] > 0).astype("float32")[..., None]
+    F = lambda i: np.clip((X[i] - fmu) / fsd, -5, 5).astype("float32")
+    cw = dict(enumerate(compute_class_weight("balanced", classes=np.unique(y[itr]), y=y[itr])))
+    cw[1] *= 1.2
+    m = build("both", M.shape[1], len(FEATURES))
+    m.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005, clipnorm=1.0),
+              loss="binary_crossentropy", metrics=["accuracy"])
+    m.fit([S(itr), K(itr), F(itr)], y[itr], validation_split=0.2, epochs=epochs,
+          batch_size=64, class_weight=cw, verbose=0,
+          callbacks=[tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=20,
+                                                      restore_best_weights=True),
+                     tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5,
+                                                          patience=10, min_lr=1e-7)])
+    return m.predict([S(iev), K(iev), F(iev)], verbose=0).flatten()
+
+
+def scale(xtr, xev):
+    if a.scaler == "standard":
+        from sklearn.preprocessing import StandardScaler
+        sc = StandardScaler().fit(xtr)
+        return sc.transform(xtr), sc.transform(xev)
+    with contextlib.redirect_stdout(io.StringIO()):
+        return normalize_data(xtr, xev)
+
+
 def fit_flat(kind, xtr, ytr, xev):
     mk = {"LogReg": lambda: LogisticRegression(max_iter=2000),
           "RF": lambda: RandomForestClassifier(n_estimators=200, random_state=42,
@@ -131,15 +186,16 @@ for k, s in enumerate(subjects):
 
     # Condicoes A e B: modelo de populacao. Normaliza com os outros 14.
     ev = np.concatenate([cal, tst])
-    with contextlib.redirect_stdout(io.StringIO()):
-        xtr_A, xev_A = normalize_data(X[others], X[ev])
+    xtr_A, xev_A = scale(X[others], X[ev])
     # Condicao C: o treino inclui as janelas de calibracao do sujeito.
     trC = np.concatenate([others, cal])
-    with contextlib.redirect_stdout(io.StringIO()):
-        xtr_C, xtst_C = normalize_data(X[trC], X[tst])
+    xtr_C, xtst_C = scale(X[trC], X[tst])
 
     for name in [m.strip() for m in a.models.split(",")]:
-        if name == "D":
+        if name == "G":
+            pA = fit_g(others, ev, 42 + k)
+            pC = fit_g(trC, tst, 42 + k)
+        elif name == "D":
             pA = fit_deep(xtr_A.reshape(len(xtr_A), -1, 1), y[others],
                           xev_A.reshape(len(xev_A), -1, 1), 42 + k, a.epochs)
             pC = fit_deep(xtr_C.reshape(len(xtr_C), -1, 1), y[trC],
@@ -169,6 +225,20 @@ for name in r.model.unique():
     print(g.groupby("condition")[["acc", "sens", "spec", "auc"]]
           .agg(["mean", "std"]).round(2).to_string())
     piv = g.pivot(index="subject", columns="condition", values="acc")
+    for met in ("acc", "spec", "sens"):
+        pv = g.pivot(index="subject", columns="condition", values=met)
+        print(f"  {met:4s} minimo entre sujeitos: " + "  ".join(
+            f"{c} {pv[c].min():5.1f}" for c in pv.columns) + "  | SD: " + "  ".join(
+            f"{c} {pv[c].std(ddof=1):5.1f}" for c in pv.columns))
+    pa = g.pivot(index="subject", columns="condition", values="acc")
+    ps = g.pivot(index="subject", columns="condition", values="spec")
+    print("  sujeitos com exatidao < 70%: " + "  ".join(f"{c} {(pa[c] < 70).sum()}" for c in pa.columns)
+          + "  | especificidade < 50%: " + "  ".join(f"{c} {(ps[c] < 50).sum()}" for c in ps.columns))
+    th = g[g.condition == "B_threshold"].thr
+    print(f"  limiares proprios: mediana {th.median():.2f}, gama [{th.min():.2f}, {th.max():.2f}]")
+    for x, z in (("B_threshold", "A_population"), ("C_retrained", "A_population")):
+        pv = g.pivot(index="subject", columns="condition", values="acc")
+        print(f"  Wilcoxon {x} - {z} acc: p={stats.wilcoxon(pv[x], pv[z]).pvalue:.4f}")
     for x, z in (("B_threshold", "A_population"), ("C_retrained", "A_population"),
                  ("B_threshold", "C_retrained")):
         for met in ("acc", "spec"):

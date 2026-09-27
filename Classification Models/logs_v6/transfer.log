@@ -1,0 +1,24 @@
+WESAD 907 janelas (35.9% stress) | SWELL 4502 janelas (60.8% stress)
+
+==============================================================
+TREINO em WESAD  ->  TESTE em SWELL
+==============================================================
+  LogReg                 AUC 0.421  <- ABAIXO DO ACASO
+  RandomForest           AUC 0.440  <- ABAIXO DO ACASO
+  MLP resumo             AUC 0.421 +- 0.003  <- ABAIXO DO ACASO
+  Conv1D so serie        AUC 0.381 +- 0.009  <- ABAIXO DO ACASO
+  Conv1D serie+resumo    AUC 0.433 +- 0.050  <- ABAIXO DO ACASO
+
+==============================================================
+TREINO em SWELL  ->  TESTE em WESAD
+==============================================================
+  LogReg                 AUC 0.185  <- ABAIXO DO ACASO
+  RandomForest           AUC 0.385  <- ABAIXO DO ACASO
+  MLP resumo             AUC 0.275 +- 0.160  <- ABAIXO DO ACASO
+  Conv1D so serie        AUC 0.170 +- 0.046  <- ABAIXO DO ACASO
+  Conv1D serie+resumo    AUC 0.245 +- 0.056  <- ABAIXO DO ACASO
+
+Gravado em results_v6_transfer.csv
+
+Leitura: AUC = 0,5 significa nenhum sinal transferivel. AUC < 0,5 significa
+sinal transferivel mas INVERTIDO -- os rotulos dos dois datasets opoem-se.

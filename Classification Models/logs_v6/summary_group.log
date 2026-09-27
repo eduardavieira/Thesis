@@ -1,0 +1,25 @@
+907 janelas, 35.94% stress
+serie NN: 73 passos max, comprimento real min 23 / mediana 37 / max 73
+arquitectura: summary   cv: group
+GroupKFold k=5 por sujeito (15 sujeitos)
+
+  fold 1: acc 92.31  prec 87.32  rec 92.54  spec 92.17  AUC 0.977  (3 sujeitos no teste)
+  fold 2: acc 62.98  prec 49.02  rec 76.92  spec 55.17  AUC 0.789  (3 sujeitos no teste)
+  fold 3: acc 82.97  prec 81.48  rec 67.69  spec 91.45  AUC 0.907  (3 sujeitos no teste)
+  fold 4: acc 87.85  prec 82.09  rec 84.62  spec 89.66  AUC 0.940  (3 sujeitos no teste)
+  fold 5: acc 76.80  prec 61.46  rec 92.19  spec 68.38  AUC 0.926  (3 sujeitos no teste)
+
+==================================================================
+SUMMARY  (5 seeds)
+==================================================================
+  metrica          media      SD      min      max
+  accuracy        80.580  11.402   62.983   92.308
+  precision       72.275  16.320   49.020   87.324
+  recall          82.791  10.595   67.692   92.537
+  specificity     79.366  16.749   55.172   92.174
+  ROC-AUC          0.908   0.071    0.789    0.977
+
+  parametros: 7,393
+  majority  : 64.06%
+
+  Referencias (V5, 5 seeds): RandomForest 63.72 | Model C 61.95 | Model D 61.18 | LogReg 59.50

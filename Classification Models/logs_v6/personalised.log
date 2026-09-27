@@ -1,0 +1,93 @@
+WARNING:tensorflow:5 out of the last 7 calls to <function Model.make_predict_function.<locals>.predict_function at 0x7f641c334550> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:6 out of the last 9 calls to <function Model.make_predict_function.<locals>.predict_function at 0x7f641c334280> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WESAD: 907 janelas, 15 sujeitos, calibracao = 50% das janelas de cada classe (divisao temporal)
+
+--- S2: calibracao 29 janelas (10 stress), teste 29 (10 stress)
+    G      A acc  72.4 spec  89.5 | B acc  89.7 spec  89.5 (thr 0.12) | C acc  72.4 spec  94.7
+    LogReg A acc  55.2 spec  84.2 | B acc  37.9 spec  31.6 (thr 0.09) | C acc  55.2 spec  84.2
+--- S3: calibracao 29 janelas (10 stress), teste 30 (11 stress)
+    G      A acc  86.7 spec 100.0 | B acc  96.7 spec 100.0 (thr 0.04) | C acc  83.3 spec 100.0
+    LogReg A acc  83.3 spec 100.0 | B acc  83.3 spec 100.0 (thr 0.41) | C acc  83.3 spec 100.0
+--- S4: calibracao 29 janelas (10 stress), teste 30 (11 stress)
+    G      A acc  96.7 spec 100.0 | B acc  96.7 spec  94.7 (thr 0.04) | C acc  96.7 spec 100.0
+    LogReg A acc  93.3 spec 100.0 | B acc  93.3 spec  89.5 (thr 0.02) | C acc  93.3 spec 100.0
+--- S5: calibracao 30 janelas (10 stress), teste 30 (11 stress)
+    G      A acc  63.3 spec 100.0 | B acc  76.7 spec  94.7 (thr 0.09) | C acc  63.3 spec 100.0
+    LogReg A acc  63.3 spec 100.0 | B acc 100.0 spec 100.0 (thr 0.11) | C acc  63.3 spec 100.0
+--- S6: calibracao 30 janelas (10 stress), teste 30 (11 stress)
+    G      A acc  83.3 spec  73.7 | B acc  93.3 spec 100.0 (thr 0.89) | C acc  90.0 spec 100.0
+    LogReg A acc  73.3 spec  94.7 | B acc  86.7 spec  94.7 (thr 0.36) | C acc  80.0 spec  94.7
+--- S7: calibracao 30 janelas (10 stress), teste 30 (11 stress)
+    G      A acc  93.3 spec 100.0 | B acc  93.3 spec 100.0 (thr 0.65) | C acc  96.7 spec 100.0
+    LogReg A acc 100.0 spec 100.0 | B acc 100.0 spec 100.0 (thr 0.51) | C acc 100.0 spec 100.0
+--- S8: calibracao 30 janelas (11 stress), teste 30 (11 stress)
+    G      A acc  83.3 spec 100.0 | B acc  90.0 spec  89.5 (thr 0.15) | C acc  93.3 spec  94.7
+    LogReg A acc  90.0 spec  94.7 | B acc  93.3 spec  94.7 (thr 0.38) | C acc  90.0 spec  94.7
+--- S9: calibracao 30 janelas (10 stress), teste 30 (11 stress)
+    G      A acc  76.7 spec  63.2 | B acc  73.3 spec  68.4 (thr 0.60) | C acc  90.0 spec 100.0
+    LogReg A acc  70.0 spec 100.0 | B acc  66.7 spec  78.9 (thr 0.32) | C acc  70.0 spec 100.0
+--- S10: calibracao 32 janelas (12 stress), teste 31 (12 stress)
+    G      A acc  48.4 spec  21.1 | B acc  87.1 spec 100.0 (thr 1.00) | C acc  87.1 spec  84.2
+    LogReg A acc  38.7 spec   0.0 | B acc  80.6 spec 100.0 (thr 0.98) | C acc  38.7 spec   0.0
+--- S11: calibracao 31 janelas (11 stress), teste 30 (11 stress)
+    G      A acc  96.7 spec  94.7 | B acc  96.7 spec 100.0 (thr 1.00) | C acc 100.0 spec 100.0
+    LogReg A acc 100.0 spec 100.0 | B acc  96.7 spec 100.0 (thr 0.92) | C acc 100.0 spec 100.0
+--- S13: calibracao 31 janelas (11 stress), teste 30 (11 stress)
+    G      A acc  66.7 spec  47.4 | B acc  93.3 spec 100.0 (thr 0.95) | C acc  96.7 spec 100.0
+    LogReg A acc  86.7 spec  78.9 | B acc  96.7 spec  94.7 (thr 0.66) | C acc  86.7 spec  78.9
+--- S14: calibracao 31 janelas (11 stress), teste 30 (11 stress)
+    G      A acc 100.0 spec 100.0 | B acc  90.0 spec 100.0 (thr 0.98) | C acc 100.0 spec 100.0
+    LogReg A acc 100.0 spec 100.0 | B acc  83.3 spec 100.0 (thr 0.93) | C acc 100.0 spec 100.0
+--- S15: calibracao 31 janelas (11 stress), teste 30 (11 stress)
+    G      A acc  76.7 spec  68.4 | B acc  93.3 spec 100.0 (thr 0.93) | C acc  96.7 spec 100.0
+    LogReg A acc  80.0 spec  89.5 | B acc  76.7 spec  89.5 (thr 0.54) | C acc  80.0 spec  89.5
+--- S16: calibracao 31 janelas (11 stress), teste 30 (11 stress)
+    G      A acc 100.0 spec 100.0 | B acc 100.0 spec 100.0 (thr 0.63) | C acc 100.0 spec 100.0
+    LogReg A acc 100.0 spec 100.0 | B acc 100.0 spec 100.0 (thr 0.86) | C acc 100.0 spec 100.0
+--- S17: calibracao 32 janelas (12 stress), teste 31 (12 stress)
+    G      A acc  87.1 spec  78.9 | B acc  96.8 spec  94.7 (thr 0.81) | C acc  87.1 spec  78.9
+    LogReg A acc  87.1 spec  78.9 | B acc  93.5 spec  89.5 (thr 0.81) | C acc  87.1 spec  78.9
+
+Guardado em results_v6_personalised.csv
+
+===== G  (15 sujeitos, media +/- SD entre sujeitos)
+                acc          sens          spec          auc      
+               mean    std   mean    std   mean    std  mean   std
+condition                                                         
+A_population  82.08  14.93  80.90  29.38  82.46  23.93  0.96  0.05
+B_threshold   91.12   7.41  83.78  14.35  95.44   8.41  0.96  0.05
+C_retrained   90.22  10.59  78.41  29.21  96.84   6.54  0.97  0.05
+  acc  minimo entre sujeitos: A_population  48.4  B_threshold  73.3  C_retrained  63.3  | SD: A_population  14.9  B_threshold   7.4  C_retrained  10.6
+  spec minimo entre sujeitos: A_population  21.1  B_threshold  68.4  C_retrained  78.9  | SD: A_population  23.9  B_threshold   8.4  C_retrained   6.5
+  sens minimo entre sujeitos: A_population   0.0  B_threshold  45.5  C_retrained   0.0  | SD: A_population  29.4  B_threshold  14.4  C_retrained  29.2
+  sujeitos com exatidao < 70%: A_population 3  B_threshold 0  C_retrained 1  | especificidade < 50%: A_population 2  B_threshold 0  C_retrained 0
+  limiares proprios: mediana 0.65, gama [0.04, 1.00]
+  Wilcoxon B_threshold - A_population acc: p=0.0184
+  Wilcoxon C_retrained - A_population acc: p=0.0128
+  B_threshold  - A_population acc :  +9.04 pp +/- 12.49  p=0.0141  *
+  B_threshold  - A_population spec: +12.98 pp +/- 24.84  p=0.0624
+  C_retrained  - A_population acc :  +8.14 pp +/- 12.42  p=0.0237  *
+  C_retrained  - A_population spec: +14.39 pp +/- 22.01  p=0.0240  *
+  B_threshold  - C_retrained  acc :  +0.91 pp +/-  9.18  p=0.7080
+  B_threshold  - C_retrained  spec:  -1.40 pp +/- 10.61  p=0.6165
+
+===== LogReg  (15 sujeitos, media +/- SD entre sujeitos)
+                acc          sens          spec          auc      
+               mean    std   mean    std   mean    std  mean   std
+condition                                                         
+A_population  81.40  18.32  69.09  38.23  88.07  25.59  0.91  0.18
+B_threshold   85.92  16.46  77.58  23.21  90.88  17.51  0.91  0.18
+C_retrained   81.84  18.19  70.30  37.40  88.07  25.59  0.92  0.17
+  acc  minimo entre sujeitos: A_population  38.7  B_threshold  37.9  C_retrained  38.7  | SD: A_population  18.3  B_threshold  16.5  C_retrained  18.2
+  spec minimo entre sujeitos: A_population   0.0  B_threshold  31.6  C_retrained   0.0  | SD: A_population  25.6  B_threshold  17.5  C_retrained  25.6
+  sens minimo entre sujeitos: A_population   0.0  B_threshold  45.5  C_retrained   0.0  | SD: A_population  38.2  B_threshold  23.2  C_retrained  37.4
+  sujeitos com exatidao < 70%: A_population 3  B_threshold 2  C_retrained 3  | especificidade < 50%: A_population 1  B_threshold 1  C_retrained 1
+  limiares proprios: mediana 0.51, gama [0.02, 0.98]
+  Wilcoxon B_threshold - A_population acc: p=0.4760
+  Wilcoxon C_retrained - A_population acc: p=0.3173
+  B_threshold  - A_population acc :  +4.52 pp +/- 16.33  p=0.3019
+  B_threshold  - A_population spec:  +2.81 pp +/- 31.13  p=0.7321
+  C_retrained  - A_population acc :  +0.44 pp +/-  1.72  p=0.3343
+  C_retrained  - A_population spec:  +0.00 pp +/-  0.00  p=nan
+  B_threshold  - C_retrained  acc :  +4.08 pp +/- 16.17  p=0.3454
+  B_threshold  - C_retrained  spec:  +2.81 pp +/- 31.13  p=0.7321

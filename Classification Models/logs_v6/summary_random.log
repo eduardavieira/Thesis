@@ -1,0 +1,23 @@
+907 janelas, 35.94% stress
+serie NN: 73 passos max, comprimento real min 23 / mediana 37 / max 73
+arquitectura: summary   cv: random
+  seed 42: acc 88.46  prec 85.48  rec 81.54  spec 92.31  AUC 0.947
+  seed 43: acc 87.36  prec 83.87  rec 80.00  spec 91.45  AUC 0.932
+  seed 44: acc 85.71  prec 83.05  rec 75.38  spec 91.45  AUC 0.908
+  seed 45: acc 87.36  prec 81.82  rec 83.08  spec 89.74  AUC 0.953
+  seed 46: acc 87.36  prec 82.81  rec 81.54  spec 90.60  AUC 0.934
+
+==================================================================
+SUMMARY  (5 seeds)
+==================================================================
+  metrica          media      SD      min      max
+  accuracy        87.253   0.983   85.714   88.462
+  precision       83.407   1.372   81.818   85.484
+  recall          80.308   2.959   75.385   83.077
+  specificity     91.111   0.975   89.744   92.308
+  ROC-AUC          0.935   0.017    0.908    0.953
+
+  parametros: 7,393
+  majority  : 64.29%
+
+  Referencias (V5, 5 seeds): RandomForest 63.72 | Model C 61.95 | Model D 61.18 | LogReg 59.50

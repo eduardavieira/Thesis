@@ -1,0 +1,10 @@
+erro max. ao recalcular as features a partir da serie: {'hr_mean': 2.3e-05, 'nni_mean': 5e-05, 'nni_min': 0.0, 'nni_max': 0.0, 'sdnn': 1.7e-05, 'rmssd': 6e-06, 'nn50': 0.0, 'pnn50': 0.0}
+
+Model G, WESAD, N=182, 50 permutacoes
+condicao             exatidao                AUC   queda acc / AUC
+intact        91.21 +/-  0.00     0.965 +/- 0.000    +0.00 pp / +0.000
+flat          74.18 +/-  0.00     0.842 +/- 0.000   -17.03 pp / -0.123
+perm          79.95 +/-  1.56     0.936 +/- 0.009   -11.26 pp / -0.028
+perm+rec      78.02 +/-  1.09     0.923 +/- 0.009   -13.19 pp / -0.041
+
+-> results_v6_model_g_permutation.csv

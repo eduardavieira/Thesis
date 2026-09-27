@@ -20,9 +20,34 @@ Fontes:
   Ablacao F1/F2: results_wesad_F{1,2}_D.csv
 """
 import os
+import sys
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+# --v6: ler as CSVs da V6 (duracoes reais, run_v6.sh) e escrever ci_tables_v6.tex
+V6 = "--v6" in sys.argv
+_MAP = [("results_wesad_pr_", "results_wesad_v6_"),
+        ("results_pooled_baselines.csv", "results_v6_pooled_baselines.csv"),
+        ("results_v5.csv", "results_v6_pooled_random_ABCD.csv"),
+        ("results_group_ABCD.csv", "results_v6_pooled_group_ABCD.csv"),
+        ("results_seq_", "results_v6_pooled_random_"),
+        ("results_group_", "results_v6_pooled_group_"),
+        ("ProcessedECGData_v5.csv", "ProcessedECGData_v6.csv"),
+        ("results_swell_group_", "results_v6_swell_group_"),
+        ("results_transfer.csv", "results_v6_transfer.csv"),
+        ("results_wesad_F", "results_wesad_v6_F"),
+        ("results/ci_tables.tex", "results/ci_tables_v6.tex")]
+
+
+def N(name):
+    """Nome de ficheiro da V5 -> V6 quando se corre com --v6."""
+    if not V6:
+        return name
+    for a, b in _MAP:
+        if a in name:
+            return name.replace(a, b, 1)
+    return name
 
 NAMES = {"Majority": "Majority classifier", "Dataset-only": "Dataset-only rule",
          "LogReg": "Logistic regression", "RandomForest": "Random forest",
@@ -47,29 +72,29 @@ def ci(x):
 
 # ---------------------------------------------------------------- carregar
 def wesad(cv):
-    b = pd.read_csv("results_wesad_pr_baselines.csv")
+    b = pd.read_csv(N("results_wesad_pr_baselines.csv"))
     b = b[b.cv == cv]
     out = {m: b[b.model == m].sort_values("fold").reset_index(drop=True)
            for m in ["Majority", "LogReg", "RandomForest"]}
-    ab = pd.read_csv(f"results_wesad_pr_{cv}_ABCD.csv")
+    ab = pd.read_csv(N(f"results_wesad_pr_{cv}_ABCD.csv"))
     for m in "ABCD":
         out[m] = ab[ab.model == m].sort_values("seed").reset_index(drop=True)
     for a in ["summary", "seq", "both"]:
-        out[a] = pd.read_csv(f"results_wesad_pr_{cv}_{a}.csv").sort_values("seed").reset_index(drop=True)
+        out[a] = pd.read_csv(N(f"results_wesad_pr_{cv}_{a}.csv")).sort_values("seed").reset_index(drop=True)
     return out
 
 
 def pooled(cv):
-    b = pd.read_csv("results_pooled_baselines.csv")
+    b = pd.read_csv(N("results_pooled_baselines.csv"))
     b = b[b.cv == cv]
     out = {m: b[b.model == m].sort_values("fold").reset_index(drop=True)
            for m in ["Majority", "Dataset-only", "LogReg", "RandomForest"]}
-    ab = pd.read_csv("results_v5.csv" if cv == "random" else "results_group_ABCD.csv")
+    ab = pd.read_csv(N("results_v5.csv" if cv == "random" else "results_group_ABCD.csv"))
     for m in "ABCD":
         out[m] = ab[ab.model == m].sort_values("seed").reset_index(drop=True)
     pre = "results_seq_" if cv == "random" else "results_group_"
     for a in ["summary", "seq", "both"]:
-        out[a] = pd.read_csv(f"{pre}{a}.csv").sort_values("seed").reset_index(drop=True)
+        out[a] = pd.read_csv(N(f"{pre}{a}.csv")).sort_values("seed").reset_index(drop=True)
     # No combinado a classe maioritaria e stress: o majority tem especificidade 0.
     out["Majority"]["spec"] = out["Majority"]["spec"].fillna(0.0)
     return out
@@ -82,7 +107,7 @@ def swell_group():
     from sklearn.model_selection import GroupKFold
     from sklearn.preprocessing import StandardScaler
     F = ["hr_mean", "nni_mean", "nni_min", "nni_max", "sdnn", "rmssd", "nn50", "pnn50"]
-    d = pd.read_csv("/home/eduarda/Desktop/ProcessedECGData_v5.csv").dropna(subset=F + ["label"])
+    d = pd.read_csv(N("/home/eduarda/Desktop/ProcessedECGData_v5.csv")).dropna(subset=F + ["label"])
     d = d[~d.file.str.contains("ECG_values")].reset_index(drop=True)
     X, y = d[F].to_numpy(float), d.label.to_numpy().astype(int)
     g = d.file.str.extract(r"^(S\d+)")[0].to_numpy()
@@ -102,10 +127,10 @@ def swell_group():
             rows.append(dict(model=nm, fold=k, acc=accuracy_score(y[te], p > 0.5) * 100,
                              spec=tn / (tn + fp) * 100, auc=roc_auc_score(y[te], p)))
     r = pd.DataFrame(rows)
-    r.to_csv("results_swell_group_baselines.csv", index=False)
+    r.to_csv(N("results_swell_group_baselines.csv"), index=False)
     out = {m: r[r.model == m].reset_index(drop=True) for m in ["Majority", "LogReg", "RandomForest"]}
     for a in ["summary", "seq", "both"]:
-        out[a] = pd.read_csv(f"results_swell_group_{a}.csv")
+        out[a] = pd.read_csv(N(f"results_swell_group_{a}.csv"))
     return out
 
 
@@ -163,17 +188,24 @@ if __name__ == "__main__":
 
     # --- tabela principal: WESAD split aleatorio, com PR-AUC
     R = W["random"]
-    bb = {k: best(R, k) for k in ("acc", "spec", "auc", "prauc")}
+    # V6: acrescenta a sensibilidade (pedido da avaliacao externa: o Cap. 3
+    # declara os falsos negativos como o erro mais caro)
+    COLS = ((("acc", 1), ("rec", 1), ("spec", 1), ("auc", 0), ("prauc", 0)) if V6
+            else (("acc", 1), ("spec", 1), ("auc", 0), ("prauc", 0)))
+    bb = {k: best(R, k) for k, _ in COLS}
+    head = ("\\textbf{Model} & \\textbf{Accuracy (\\%)} & "
+            + ("\\textbf{Sensitivity (\\%)} & " if V6 else "")
+            + "\\textbf{Specificity (\\%)} & \\textbf{AUC} & \\textbf{PR-AUC} & \\textbf{Parameters} \\\\ \\hline")
     L = ["% ===== Tabela tab:wesad_random (substitui a atual) =====",
-         "\\begin{table}[h!]", "\\centering", "\\small",
-         "\\begin{tabular}{|l|c|c|c|c|c|}", "\\hline",
-         "\\textbf{Model} & \\textbf{Accuracy (\\%)} & \\textbf{Specificity (\\%)} & \\textbf{AUC} & \\textbf{PR-AUC} & \\textbf{Parameters} \\\\ \\hline"]
+         "\\begin{table}[h!]", "\\centering"]
+    L += (["\\resizebox{\\textwidth}{!}{%", "\\begin{tabular}{|l|c|c|c|c|c|c|}"] if V6
+          else ["\\small", "\\begin{tabular}{|l|c|c|c|c|c|}"])
+    L += ["\\hline", head]
     for m in ["Majority", "LogReg", "RandomForest", "summary", "A", "B", "C", "D", "seq", "both"]:
         par = f"{int(R[m]['params'].iloc[0]):,}" if "params" in R[m] else "---"
         L.append(NAMES[m] + " & " + " & ".join(
-            cell_sd(R[m], k, p, bold=(m in bb[k])) for k, p in
-            (("acc", 1), ("spec", 1), ("auc", 0), ("prauc", 0))) + f" & {par} \\\\ \\hline")
-    L += ["\\end{tabular}",
+            cell_sd(R[m], k, p, bold=(m in bb[k])) for k, p in COLS) + f" & {par} \\\\ \\hline")
+    L += ["\\end{tabular}}" if V6 else "\\end{tabular}",
           "\\caption{Performance on WESAD under a random 80/20 split. Mean $\\pm$ standard "
           "deviation over five runs (seeds 42 to 46) on identical splits. The majority classifier "
           "never predicts stress, hence its specificity of 100\\%; its PR-AUC equals the proportion "
@@ -217,7 +249,9 @@ if __name__ == "__main__":
                "of Model G, have no interval.\n")
     M4 = [("acc", "Accuracy (\\%)", 1), ("spec", "Specificity (\\%)", 1), ("auc", "AUC", 0), ("prauc", "PR-AUC", 0)]
     M3 = [("acc", "Accuracy (\\%)", 1), ("spec", "Specificity (\\%)", 1), ("auc", "AUC", 0)]
-    out.append(ci_table(W["random"], M4, "95\\% confidence intervals on WESAD under a random 80/20 split, five runs.", "tab:ci_wesad_random"))
+    M5 = [("acc", "Accuracy (\\%)", 1), ("rec", "Sensitivity (\\%)", 1), ("spec", "Specificity (\\%)", 1),
+          ("auc", "AUC", 0), ("prauc", "PR-AUC", 0)]
+    out.append(ci_table(W["random"], M5 if V6 else M4, "95\\% confidence intervals on WESAD under a random 80/20 split, five runs.", "tab:ci_wesad_random"))
     out.append(ci_table(W["group"], M4, "95\\% confidence intervals on WESAD under GroupKFold, five folds.", "tab:ci_wesad_group"))
     out.append(ci_table(W["loso"], M4, "95\\% confidence intervals on WESAD under leave-one-subject-out, 15 folds.", "tab:ci_wesad_loso"))
     P = {cv: pooled(cv) for cv in ("random", "group")}
@@ -227,7 +261,7 @@ if __name__ == "__main__":
     out.append(ci_table(SW, M3, "95\\% confidence intervals on SWELL-KW alone under GroupKFold, five folds over 22 subjects.", "tab:ci_swell_group"))
 
     # transferencia
-    t = pd.read_csv("results_transfer.csv")
+    t = pd.read_csv(N("results_transfer.csv"))
     tmap = {"LogReg": "LogReg", "RandomForest": "RandomForest", "MLP resumo": "summary",
             "Conv1D so serie": "seq", "Conv1D serie+resumo": "both"}
     L = ["\\begin{table}[h!]", "\\centering", "\\footnotesize", "\\begin{tabular}{|l|c|c|}", "\\hline",
@@ -245,7 +279,7 @@ if __name__ == "__main__":
     out.append("\n".join(L))
 
     # ablacao F1/F2
-    ab = {"F2": pd.read_csv("results_wesad_F2_D.csv"), "F1": pd.read_csv("results_wesad_F1_D.csv")}
+    ab = {"F2": pd.read_csv(N("results_wesad_F2_D.csv")), "F1": pd.read_csv(N("results_wesad_F1_D.csv"))}
     L = ["\\begin{table}[h!]", "\\centering", "\\footnotesize", "\\begin{tabular}{|l|c|c|c|c|}", "\\hline",
          "\\textbf{Subset} & \\textbf{Accuracy (\\%)} & \\textbf{Sensitivity (\\%)} & \\textbf{Specificity (\\%)} & \\textbf{AUC} \\\\ \\hline"]
     for k, d in ab.items():
@@ -256,5 +290,5 @@ if __name__ == "__main__":
     out.append("\n".join(L))
 
     os.makedirs("results", exist_ok=True)
-    open("results/ci_tables.tex", "w").write("\n".join(out))
-    print("escrito results/ci_tables.tex")
+    open(N("results/ci_tables.tex"), "w").write("\n".join(out))
+    print("escrito", N("results/ci_tables.tex"))
