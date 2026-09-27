@@ -2048,3 +2048,258 @@ S10: LogReg 0,901 / F 0,923, ambos spec 0.
 
 **Ruído entre invocações (mesmo código, mesmas seeds):** B +2,86 pp, D −1,59,
 E +0,95, A −0,53, C +0,42, F 0,00, G +0,11. Substitui o "0,90 pp".
+
+# Avaliação externa (2026-09-26, noite): o que se confirmou nos dados
+
+Um agente independente avaliou a tese. Verificações feitas contra o zip V5 de
+26/09 e as CSVs. Scripts no repositório (não no scratchpad).
+
+## 1. Teste t corrigido de Nadeau & Bengio — `corrected_ttest.py`
+
+As 5 seeds do split aleatório são particoes sobrepostas dos mesmos dados; o
+t-test emparelhado habitual subestima a variância. Correcção:
+var × (1/J + n_teste/n_treino), J=5, rácio 0,25 → t desce 1,5×. Não se aplica
+a GroupKFold/LOSO (testes disjuntos). O script reproduz ao decimal os p de Holm
+da tese (coluna "Holm") e acrescenta os corrigidos:
+
+```
+G - x, exatidao   Holm habitual     Holm Nadeau-Bengio
+  A  +10,58         0,018 *            0,077
+  B   +7,20         0,024 *            0,097
+  C   +6,03         0,024 *            0,097
+  D   +6,46         0,028 *            0,105
+  E   +4,76         0,010 *            0,044 *    <- o unico que sobrevive
+  LogReg +4,97      0,076              0,223
+  RF     +3,18      0,076              0,223
+G AUC: nenhum sobrevive com a correcao (Holm NB 0,086-0,180).
+F: so F - A em exatidao sobrevive (0,028).
+F2 - F1 (Model D): +0,53 pp, IC95% [-2,59; +3,65] habitual, [-4,15; +5,20] NB.
+```
+
+**G vs E é a comparação limpa** (mesma receita de treino: lr 5e-4, batch 64,
+clipnorm 1,0; mesmas 8 features; a única diferença é a série). A–D têm outra
+receita (lr 1e-4, batch 32, clipnorm e épocas diferentes). O argumento
+"representação > arquitetura" deve assentar no G − E.
+
+## 2. Teste de permutação da ordem — `model_g_permutation.py`
+
+A ablação da tese (série = média da janela) tira a variabilidade toda, não só a
+ordem, e cria entrada fora da distribuição. Baralhar os intervalos dentro de
+cada janela mantém média/min/max/sdnn/nº de batimentos. 50 permutações, pesos
+V5 seed 42, N=189:
+
+```
+intacto      89,95   AUC 0,961
+flat         77,78   0,883    (-12,17 pp / -0,079)  = ablacao da tese
+perm         81,69   0,823    (-8,25 / -0,138)       serie baralhada, resumo intacto
+perm+rec     79,09   0,858    (-10,86 / -0,104)      serie baralhada E resumo recalculado
+```
+**O G usa mesmo a ordem** — o teste limpo (perm+rec) custa 10,86 pp e 0,104 de
+AUC. O que está errado na tese é só a frase "those statistics do not depend on
+the order" (Applications l.272 e 4.6): rmssd, nn50 e pnn50 dependem da ordem.
+
+## 3. BUG: durações erradas no `time_duration.csv` → janelas que não têm 30 s
+
+O `split_ecg()` do ETL deriva o tamanho da janela da duração listada
+(`30 / (duracao / n_amostras)`). Comparando com amostras/fs de cada ficheiro
+(`Data Processing/fix_durations.py`):
+
+| Ficheiro | Listada | Real | Janela efectiva |
+|---|---|---|---|
+| S2_baseline_ECG_values.csv | 1518,3 s | 1144,0 s | **22,9 s** (50 janelas; devia dar 38) |
+| S5_stress_I.csv | 1595,0 | 2940,8 | 55,3 s (trocada com a do stress_T) |
+| S5_stress_T.csv | 2940,0 | 1595,4 | 16,3 s |
+| S12_stress_T.csv | 2126,0 | 918,8 | **13,0 s** (a linha que foi acrescentada à mão) |
+| S3_stress_T.csv | 2142,0 | 2322,7 | 32,5 s |
+
+Restantes ficheiros do WESAD: −2% a +7% (janelas de 28,0 a 30,7 s). SWELL: exacto.
+
+Sintoma que o avaliador apanhou: a janela TN do estudo de caso (S2_baseline,
+29 intervalos, 81,98 bpm) cobre 21,6 s. **As 50 janelas do S2_baseline cobrem
+20,7–22,9 s**; nenhum outro ficheiro do WESAD tem janelas < 26 s. É 8% das
+janelas não-stress do WESAD, e o G lê o nº de batimentos (AUC 0,882 sozinho):
+as janelas encurtadas têm menos batimentos → parecem mais "calmas" → correlacionado
+com o rótulo. O TN do estudo de caso da 4.4 e o texto "one beat among 29" vêm daqui.
+A Tabela A.1 do apêndice mostra os 1518,312 s errados.
+
+**Exclusões por dataset (V5):** WESAD 0 (941 = Σ floor(duração/30)); as 1159
+exclusões são todas do SWELL.
+
+## 4. V6 (em curso, 2026-09-26)
+
+`Data Processing/time_duration_v6.csv` = amostras/fs para os 96 ficheiros.
+`Classification Models/run_v6.sh {etl_wesad|etl_all|base|abcd|ef|g}`.
+WESAD V6: **907 janelas** (581 não-stress, 326 stress = 35,94%), 0 exclusões,
+taxa de correção 0,36% / 0,99%. Saídas `results_wesad_v6_*.csv`, logs em
+`logs_v6/`. Ficheiros: `/home/eduarda/Desktop/ProcessedECGData_v6_wesad.csv`,
+`NNSeries_v6_wesad.npz`; completo (SWELL incluído, ~2 h) em
+`ProcessedECGData_v6.csv` / `NNSeries_v6.npz`.
+
+## 5. Outras verificações do avaliador
+
+- Seed 42 = média de 5 corridas (89,95 / 93,44): **coincidência aritmética**
+  (170/189 = 850/945; 114/122 = 570/610). Não foi copiado.
+- Transferência: `results_transfer.csv` tem **3 seeds** nos neuronais e 1 corrida
+  na LogReg/RF. Com n=3, três dos dez ICs passam 0,5 (limites 0,86/0,67/0,83).
+- Perdas aleatório→GroupKFold (V5): G −8,64 · F −7,38 · **B −7,05 · RF −6,76** ·
+  E −5,57 · A −3,93 · LogReg −2,35 · C −1,44 · D −0,69. O avaliador omitiu B e RF;
+  o padrão é "modelos flexíveis", não "a série".
+- O 0,909 de identificação do dataset vem da quantização 700 vs 2048 Hz, que não
+  identifica sujeitos dentro do WESAD.
+- A tese não define a tarefa do WESAD (baseline vs TSST, amusement excluído);
+  a tarefa binária habitual (Schmidt 2018) põe o amusement no não-stress.
+- Detetor de picos: `biosppy.signals.ecg.ecg()` usa o **Hamilton** por omissão;
+  a tese diz só "BioSPPy, which contains several methods".
+- Erros de compilação confirmados: `images/cnn.png` (é CNN.png),
+  `\gls{TSST}` sem acrónimo, `ap:datasets` duplicado, índice e glossário vazios.
+
+# V6 ADOTADA (2026-09-26, noite) — SUBSTITUI todos os números anteriores
+
+Decisão da autora: passar a tese para a V6 (durações reais). Dados:
+`/home/eduarda/Desktop/ProcessedECGData_v6.csv` + `NNSeries_v6.npz` (5409 janelas),
+e `..._v6_wesad.*` (as 907 linhas do WESAD, idênticas às do ficheiro completo).
+Runner: `Classification Models/run_v6.sh`. Relatórios: `logs_v6/pr_report_v6.txt`,
+`logs_v6/dataset_analysis.log`, `logs_v6/explain_g.log`, `directions_g.log`,
+`permutation_g.log`. Tabelas: `confidence_intervals.py --v6` → `results/ci_tables_v6.tex`.
+Rascunhos entregues: `drafts/sec_4_{1,2,3,4,6}_v6.tex`,
+`drafts/correcoes_avaliacao_externa_parte{1,2_v6}.md`, `drafts/appendix_tables_v6.tex`,
+`drafts/figures_v6/`. Verificação: `drafts/simular_aplicacao.py <zip extraído>`.
+
+## Corpus
+5409 janelas (WESAD 907: 581/326, 35,94%; SWELL 4502: 1763/2739, 60,84%; total 56,66%).
+Janelas de 30,00–31,18 s (mediana 30,21). 6523 antes da exclusão. Intervalos corrigidos
+7,35% / 8,07%; excluídas 442 / 672 (15,9% / 18,0%), **todas do SWELL** (20,0% / 19,7%);
+WESAD 0 exclusões, 0,36% / 0,99% de intervalos corrigidos. Gama 500–1200: 7,27% / 11,15%.
+Durações: neutral 84 120,308 s (23,4 h), stress 112 942,165 s (31,4 h, +34,3%);
+WESAD baseline 1140–1198 s, stress 615–725 s.
+
+## 4.1
+d de Cohen WESAD/SWELL: hr +1,73/−0,42 · nni_mean −1,69/+0,44 · nni_min −1,84/+0,32 ·
+nni_max −1,40/+0,40 · sdnn −0,42/+0,22 · rmssd −0,74/+0,33 · nn50 −0,58/+0,37 ·
+pnn50 −0,75/+0,42 · média |d| 1,14/0,36. FC WESAD 72,9→98,7 (+25,8); SWELL 76,7→72,1.
+Sujeitos: WESAD 15/15 +20,78 (mediana); SWELL 22/22 −5,26. Filme excluído: −5,76, 18/20.
+Blocos do SWELL (receita reconstruída, `dataset_analysis.py`): neutral +0,13 (p=0,78),
+interrupções +2,24, pressão temporal +6,45 (p<0,001); 2.ª metade do neutral −4,46.
+Domínio (RF, CV 5): 8 features 0,706; nº batimentos 0,623; série+resíduo 0,993
+(a 700 Hz os intervalos em ms nunca acabam em 3, 6, 9).
+Transferência (5 seeds nos neuronais): W→S LogReg 0,421 · RF 0,440 · E 0,421±0,003 ·
+F 0,381±0,009 · G 0,433±0,050; S→W LogReg 0,185 · RF 0,385 · E 0,275±0,160 ·
+F 0,170±0,046 · G 0,245±0,056. Todos < 0,5; limites superiores dos ICs ≤ 0,494.
+SWELL por sujeito: LogReg 0,612 (p=0,015; Holm nos 5 → 0,075); RF 0,523; E 0,523;
+F 0,549; G 0,541. RF só SWELL: aleatório 64,62 → GroupKFold 54,74.
+
+## 4.2 (WESAD)
+Aleatório: G 89,78±2,08 · spec 94,36 · AUC 0,955 · PR 0,940; **F 90,44 · AUC 0,965 · PR 0,952**;
+E 87,25; RF 86,70; D 85,71; C 84,51; LogReg 82,64; B 81,21; A 79,78; majority 64,29.
+G−F −0,66 pp (p=0,651). Holm habitual (G vs 7 de resumo): acc sobrevive vs A, B, C,
+LogReg; NÃO vs D (0,052), E (0,056), RF (0,059). AUC vs todos menos RF; PR-AUC vs os 7.
+F: acc, AUC e PR-AUC vs os 7 (p_adj ≤ 0,041). **Nadeau–Bengio + Holm**: G só vs A (acc);
+F: PR-AUC vs os 7, acc vs LogReg e RF, AUC vs A.
+GroupKFold AUC 0,878–0,919 (G 1.º, LogReg 2.º); LOSO 0,913–0,970 (G 1.º 0,970 — o
+0,919 da V5 vinha de um fold instável, S5 0,450 → 0,984). 36 pares: nada sobrevive.
+Quedas aleatório→GKF: F −11,41, G −9,64, E −6,67, B −6,04, RF −5,56, C −4,70,
+D −3,91, A −1,74, LogReg +1,14. S10: os 9 com especificidade ≤ 7,7%.
+Matriz de confusão G (retreino seed 42, N=182): 112/5/11/54, acc 91,21, prec 91,53,
+rec 83,08, spec 95,73, AUC 0,965. Linha seed 42 da CSV: 90,66. D seed 42: 12 FP, 14 FN.
+
+## 4.3 (F1/F2, Model D)
+F2 84,95±2,29 / F1 85,82±2,25; F2−F1 −0,88 pp (p=0,398), IC [−3,46; +1,70]
+(NB [−4,75; +2,99]); AUC −0,004 (p=0,178); sensibilidade −5,85 (p=0,030, Holm 0,15).
+
+## 4.4 (G, pesos `saved_models/wesad_model_G_v6.weights.h5`)
+Máscara: r=0,998 com hr_mean; AUC 0,889 (hr_mean 0,882). Ablação: intacto 91,21/0,965 ·
+baralhado+recalc 78,02±1,09/0,923±0,009 · série=média 74,18/0,842 · série baseline
+42,31/0,520 · resumo baseline 78,57/0,949 · ambos 35,71/0,889. IG: baseline 0,916
+(0,912–0,919); completude 0,006; série 70,7% (não-stress 79,4, stress 55,2).
+Importância: sdnn 1,000 · nn50 0,876 · nni_max 0,775 · nni_mean 0,627 · nni_min 0,618 ·
+pnn50 0,577 · hr_mean 0,532 · rmssd 0,518 (top-3 48,0%). Não se sobrepõem por classe:
+nni_max e pnn50. Sentidos: fisiológicos nni_max, nni_min; **contrários hr_mean,
+nni_mean, nn50, pnn50** (4); ×0,9 → +0,197, sobe em 98%; ρ por batimento −0,18.
+Fidelidade (sdnn, nn50) 10,44 pp = o maior dos 28 pares (média 4,24, SD 3,14).
+Estabilidade resumo 0,729 (SD 0,302), série 0,681. Casos: TP S8_stress p=0,868 ·
+TN S7_baseline 0,015 · FP S17_baseline 0,628 · FN S2_stress 0,382.
+Latência: 145 ms medidos com a máquina carregada — **refazer com a máquina livre**.
+
+## Combinado V6 (4.1.1) e latência — fecho da V6 (2026-09-26)
+Aleatório: majority 56,65 · F 65,75 · G 65,53 · C 62,27 · RF 62,00 · E 61,66 · D 61,22 ·
+LogReg 60,67 · B 60,59 · A 60,50 · regra "só sei o dataset" 62,44 (> A–D, RF, LogReg, E).
+RF > A, B (acc e AUC) e > D (só AUC) com Holm; **não > C** (na V5 batia os quatro — o
+atalho eram as janelas curtas do SWELL). A–D: spec 22,86–33,65, sens 82,32–89,46.
+F > os 7 de resumo em AUC com Holm (adj ≤ 0,003). C−D: SD da diferença 1,17 (combinado)
+vs 2,89 (WESAD), p=0,114. GroupKFold: AUC 0,511–0,599; 8/9 abaixo do majority (56,74;
+exceção B 57,45); regra 61,44 > todos. Tabela `tab:pooled_subject` refeita em sec_4_1_v6.
+Série NN: 21–73 intervalos (mediana 35; o 14 da V5 era o S12). Pesos WESAD 1,39/0,78 → 1,67.
+**Latência G (máquina livre): 49,21 ms.** Tudo aplicado nos rascunhos; simulação sem problemas.
+
+# Segunda avaliação externa e zip de 27/09 (13:47)
+
+- Zip de 27/09: Parte 2 e secções 4.1–4.4/4.6 V6 aplicadas; Parte 1 a ~2/3. Tinha
+  ainda as frases SWELL/WESAD anteriores à decisão da autora (repostas em
+  `drafts/correcoes_finais.md`, secção A). O acrónimo TSST já está definido.
+- **Documento a aplicar: `drafts/correcoes_finais.md`** (validado contra este zip;
+  `drafts/simular_aplicacao.py <zip> correcoes_finais.md` → sem problemas).
+  Estado por item: `drafts/estado_aplicacao.py <zip> <md>...`.
+- **Exclusões do SWELL (folha `SWELL-KW - overview available data.xlsx`):** PP23 bloco
+  neutro "recording too short"; PP11 sem gravação cardíaca no bloco 2 e "no valid HR
+  extracted" nos outros; PP8 "no valid HR extracted" nos três blocos, o 3.º "skipped
+  (very strange data)". Critério coerente: sem bloco com FC válida ou sem neutro.
+  Os ficheiros do PP8 e PP11 existem em `Tese 2026/Datasets` mas nunca estiveram no
+  `time_duration.csv`.
+- Hernando et al. 2018 (Apple Watch): RR do sensor ótico (PPG) via app Breathe, não ECG.
+- Hwang et al. 2018 (Deep ECGNet, `article9`): CNN + 2 LSTM, ECG em bruto de 10 s,
+  87,39% / 73,96%. Benchekroun et al. 2023 (`newArtc4`, Sensors 23(4):1807): LogReg e
+  RF, LOSO dentro de cada dataset e entre datasets; RF F1 61% entre datasets.
+- Figuras G: título tinha "N=189" fixo no `explain_model_g.py`; corrigido (N={len(yte)}),
+  regeneradas com os mesmos pesos V6 → `drafts/figures_v6/`.
+- Latência do G varia entre medições: 49,21 ms (máquina livre, a da tese) e 54,38 ms.
+- G − RF em AUC (V6, aleatório): 0,0145 → "0.015".
+
+# Calibração por pessoa na V6 (2026-09-27) — ENTRA na tese (4.6.3)
+
+Decisão revertida pela autora: a calibração passa a estar no texto. Script
+`personalised_protocol.py --models G,LogReg --scaler standard` (dados V6_wesad) →
+`results_v6_personalised.csv`. LOSO; 1.ª metade de cada condição (29–32 janelas,
+~15 min) calibra, 2.ª testa. Condições: A limiar 0,5 · B limiar de Youden na
+calibração, sem retreino · C retreinado com a calibração.
+
+| | A | B | C |
+|---|---|---|---|
+| **G** exatidão | 82,08 ± 14,93 | **91,12 ± 7,41** | 90,22 ± 10,59 |
+| G pior sujeito | 48,4 | **73,3** | 63,3 |
+| G espec. mínima | 21,1 | 68,4 | 78,9 |
+| G sujeitos < 70% | 3 | **0** | 1 |
+| LogReg exatidão | 81,40 ± 18,32 | 85,92 ± 16,46 | 81,84 ± 18,19 |
+| LogReg pior / espec. mín. | 38,7 / 0,0 | 37,9 / 31,6 | 38,7 / 0,0 |
+
+G: B−A +9,04 pp, p=0,014 (Wilcoxon 0,018), Holm (2 comparações) 0,028; C−A +8,14,
+p=0,024 (Holm 0,028); B≈C (p=0,71) mas B tem melhor pior caso e C deixa o S5 com
+sensibilidade 0. B melhora 9 sujeitos, piora 2 (S14 100→90, S9 76,7→73,3). S10:
+48,4→87,1 (espec. 21,1→100). Limiares do G: mediana 0,65, gama 0,04–1,00.
+LogReg: +4,52, p=0,30 (n.s.); S10 38,7→80,7; S2 falha na ordenação (AUC teste 0,32).
+**Diferença para a V5 (Model D):** lá o retreino não ajudava; com o G ajuda em média.
+Limites escritos no texto: mesma sessão (otimista entre dias), exige janelas
+rotuladas das duas classes, n=15.
+
+# Artigo do SWELL-KW (Koldijk et al., ICMI 2014) — verificado 2026-09-27
+PDF em `~/Downloads/The SWELL Knowledge Work Dataset for Stress and User.pdf`.
+- **Não regista falhas por participante.** Diz que o conjunto tem 25 participantes,
+  que "none of the subjects needed to be excluded" (qualidade das tarefas) e que, nos
+  dados por minuto, excluíram minutos com intervalos RR anómalos (>1,2 s ou <0,5 s).
+- As falhas dos PP 8, 11 e 23 estão só na folha `SWELL-KW - overview available
+  data.xlsx`. Citação no C1: dataset no DANS, `swell_dans`, DOI 10.17026/dans-x55-69zp
+  (a autora confirma se a folha veio do DANS).
+- Frases úteis para a defesa: "Due to our experimental design of always starting with
+  the neutral baseline condition, subjects might have experienced order or fatigue
+  effects"; "We did not find significant effects of our working conditions on
+  perceived stress" (o autorrelato não entra no texto — decisão da autora).
+
+# Estado final — zip de 27/09 (18:37)
+
+`drafts/correcoes_finais.md` aplicado, exceto por decisão da autora: B7 (LF/HF +
+Billman), D2 (cortar "Deep Learning Frameworks"; a orientadora não pediu) e Fig. 3.1
+(a autora tirou o texto da imagem). Regression/Clustering ficaram comentados em vez
+de apagados; o parágrafo do Benchekroun entrou com redação ligeiramente diferente.
+Três correções pendentes (secção H): "a a system" (StateOfTheArt l.4), chave
+`\citep{articleoptimisers}` → `articleOptimizers` (estragada pelo *Replace all* da
+ortografia) e a figura `gradient_by_class_mean_G.png` ainda com "N=189" no título.
+README reescrito para a V6 no mesmo dia.

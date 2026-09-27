@@ -1,5 +1,9 @@
 # Correções V4 → V5
 
+> **Estado a 2026-09-27:** todos os pedidos da supervisora estão cumpridos e a tese
+> passou à V6; as duas avaliações externas também foram tratadas. O estado atual e
+> as decisões da autora estão no `SKILL.md`; este ficheiro é o histórico dos pedidos.
+
 Origem: PDF anotado (15 anotações, Cláudia Brito) + `notasv4.md.rtf` (12 pontos
 sobre resultados, erros de conteúdo, figuras, escrita).
 

@@ -424,3 +424,56 @@ validam que cada termo aparece uma só vez no zip, aplicam a uma cópia, verific
 chavetas e que todos os `\ref`/`\cite` resolvem, e geram o `.md` em `drafts/`.
 Para verificar se a autora aplicou: comparar texto normalizado (espaços colapsados,
 comentários `%` removidos) do zip novo com o texto novo de cada item.
+
+---
+
+# Scripts da V6 e da avaliação externa (2026-09-26, noite)
+
+Todos em `Classification Models/` salvo indicação. `run_v6.sh {etl_wesad|etl_all|base|abcd|ef|g|pooled_abcd|pooled_efg|swell_transfer|f1f2_xai}`.
+**Não editar o `run_v6.sh` enquanto uma corrida está ativa** (o bash lê o script aos
+poucos e rebenta a meio). O combinado A–D por sujeito foi corrido à parte, um
+processo por modelo: `results_v6_pooled_group_{A,B,C,D}.csv` (fundir antes do `--v6`).
+
+| Script | O quê |
+|---|---|
+| `Data Processing/fix_durations.py` | duração real (amostras/fs) → `time_duration_v6.csv` |
+| `dataset_analysis.py` | todos os números da 4.1/4.1.1 que não são redes (d de Cohen, sujeitos, blocos do SWELL, filme, baselines do combinado, regra "só sei o dataset", classificador de domínio, RF só no SWELL) |
+| `corrected_ttest.py [--prefix]` | Nadeau–Bengio + Holm no split aleatório; IC do F2−F1 |
+| `model_g_permutation.py` | permutação dos batimentos dentro da janela (teste certo da ordem) |
+| `model_g_faithfulness_ref.py` | referência da fidelidade: queda nos 28 pares de features |
+| `appendix_tables.py` | regenera as Tabelas A.1/A.2 com as durações reais |
+| `compare_v5_v6.py` | V5 vs V6 por protocolo |
+| `confidence_intervals.py --v6`, `pr_report.py --v6` | mesmos relatórios sobre as CSVs V6 (sem `--v6` reproduzem a V5 ao byte) |
+| `drafts/simular_aplicacao.py <zip> <md>` | aplica um documento de correções a uma cópia e verifica refs/cites/gls/chavetas (os rascunhos das Partes 1 e 2 foram apagados a 2026-09-27) |
+
+Receitas reconstruídas (os originais estavam no scratchpad): declives dos blocos e
+"2.ª metade" do SWELL e classificador de domínio não reproduzem ao decimal os
+valores V5 da tese (ver comentários no `dataset_analysis.py`); o resto sim.
+
+# Limpeza do repositório (2026-09-27, aprovada pela autora)
+
+Apagados (os que estavam no git continuam no histórico): cópias `*.bak*`,
+`__pycache__/`, `.ipynb_checkpoints/`, `training_history.png`, o backup parcial do
+LOSO V5; `logs_pr/` e os logs grandes de `logs_v6/` (ficam os de resumo);
+`hrv_data_final/` (CSV V4), `results_v4_backup/`, `saved_models/used_model.h5`;
+`main.py`, `Classification.ipynb`, `Explainability.py`, `run_explainability.py`,
+`explain_wesad.py`, `gradient_class_means.py`, `measure_inference.py`, `run_pr.sh`;
+`RPeakDetection_HRV_RemoteMachine.py`, `RPeakDetection_HRV.ipynb`,
+`time_duration.csv`, `Obtaining data/S2_stress_ECG_values(Wesad).csv`; rascunhos
+V5 já aplicados em `drafts/`. **Ficam por decisão da autora:** todos os resultados
+V5 (`results_*.csv` sem v6, `results/` V5, pesos V5), o `..._old.zip` e o
+`compare_v5_v6.py`. Novo `.gitignore` (pycache, checkpoints, *.bak*).
+Consequência: o `stress_feedback_agent.py` refere `used_model.h5` no exemplo de uso,
+que já não existe (a tese não depende disso: o agente só recebe o rótulo).
+
+# Após a V6 (2026-09-27)
+
+- `personalised_protocol.py` aceita `--series`, `--models G,LogReg` e
+  `--scaler standard` (StandardScaler, como as baselines da tese). A corrida da tese:
+  `--csv ProcessedECGData_v6_wesad.csv --series NNSeries_v6_wesad.npz --models
+  G,LogReg --scaler standard --out results_v6_personalised.csv`. Sem argumentos
+  reproduz a V5 (Model D, `normalize_data`).
+- `explain_model_g.py`: título das figuras com `N={len(yte)}` (antes fixo em 189).
+- `drafts/estado_aplicacao.py` e `drafts/simular_aplicacao.py <zip> <md>`: verificação
+  de um documento de correções contra um zip.
+- O README foi reescrito para a V6 (números, calibração, comandos `run_v6.sh`).
