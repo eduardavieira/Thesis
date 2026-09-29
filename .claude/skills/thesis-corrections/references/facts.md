@@ -2303,3 +2303,203 @@ Três correções pendentes (secção H): "a a system" (StateOfTheArt l.4), chav
 `\citep{articleoptimisers}` → `articleOptimizers` (estragada pelo *Replace all* da
 ortografia) e a figura `gradient_by_class_mean_G.png` ainda com "N=189" no título.
 README reescrito para a V6 no mesmo dia.
+
+# Literatura recente verificada nos originais (2026-09-28)
+
+A autora está a reescrever a tese na sua voz e a atualizar a literatura. Base:
+Zimatore et al. 2026, "HRV in Stress Monitoring by AI: A Scoping Review", Appl. Sci.
+16(1):23, doi 10.3390/app16010023 (`~/Downloads/applsci-16-00023-v2.pdf`; .bib em
+`~/Downloads/applsci-v16-i01_20260928.bib`). 15 estudos, pesquisa 2005–jan/2025, sem
+IEEE Xplore nem ACM. **A revisão tem erros: citar sempre os originais.**
+
+- **Bahameish et al. 2024** (Sensors 24(10):3210, PMC11126126) — a revisão descreve-o mal.
+  Treino e os 61,2% / 85,5% são num dataset **próprio** (38 pessoas, PPG, N-back e
+  respiração ritmada, janelas de 60 s sem sobreposição, CV aninhada LOGO por sujeito).
+  SWELL+WESAD foram **juntos só como teste externo** (120 amostras de 300 s: 38 neutro,
+  53 stress, 29 relax; só resultados combinados): stress vs neutro F1 65,8% / acc 70,3%;
+  stress vs relax F1 86,3% / acc 84,1%. Features stress vs neutro: MeanRR, RMSSD, HF
+  (MeanRR desce com stress no primário, t(105)=−6,84). Atribuem os >80% de outros estudos
+  a segmentação sobreposta e a demasiadas features. Excluíram 8 sujeitos do WESAD.
+- **Dahal et al. 2023** (`newArtc6`, no .bib mas **sem \cite no texto**): SWELL+WESAD
+  juntos, features pré-calculadas do Kaggle (527 288 instâncias), K-fold estratificado
+  (K=15) ao nível da amostra; WESAD sem-stress = baseline+amusement. ≥99% por dataset,
+  99,5% combinado. No WESAD, leave-one-out por sujeito: 0,31–0,95. mRMR escolhe features
+  diferentes em cada dataset ("depend on the dataset").
+- **Mortensen et al. 2023** (IEEE Access 11:57470): 1D CNN no SWELL (Kaggle, 410 322
+  registos de 25 pessoas), 5-fold e 70/30 aleatórios, 99,9% em 3 classes.
+- **Byun et al. 2025a** (Front. Psychiatry 15:1500310, PMC11754969): RF/MLP, HRV de 5 min,
+  split por sujeito; sem escala 0,67–0,73 → com z-score por participante 0,90–0,96;
+  SHAP: RRI domina depois da escala. A normalização usa todos os dados da pessoa (12 semanas).
+- **Lee, Cho, Kim, Jeon & Byun 2025** (Front. Psychiatry 16:1672260, PMC12508820; chave
+  `lee2025deep`; não está na revisão; chamei-lhe "Byun 2025b" por engano): 1D ResNet34 sobre RR brutos (4 Hz), CV por sujeito; 5 min acc
+  0,87–0,90 (AUROC 0,91–0,94); 1 min ~0,79–0,82. Sem XAI.
+- **Velmovitsky et al. 2022** (Front. Digit. Health 4:1058826): ECG de 30 s do Apple Watch,
+  33 pessoas, 2 semanas, rótulos DASS-21; RF acc 0,55 (recall stress 0,43). "it is
+  currently unclear whether the brief 30-second ECG reading will be sufficient".
+- **Tutunji et al. 2023** (JMIR 25:e39995): erro LOBO 29,87% vs LOSO ~42% (a revisão dá
+  42,22% no texto e 42,44% na tabela; confirmar no original).
+- Erros da revisão notados: Bahameish (acima); Mendes com RMSSD "maior" 11,6 vs 14,5;
+  Tabela 7 troca [41]/[42]; afirma que DL tem mais exatidão que ML (a tese não mostra isso:
+  G≈F, e por sujeito nada sobrevive a Holm).
+
+## Giannakakis 2019 (`article8`) e Hong 2020 (`article11`) — verificados 2026-09-28
+PDFs em `~/Downloads/8.A novel multi-kernel 1D ...pdf` e `~/Downloads/11.Opportunities ...pdf`
+(arXiv v3). Correções propostas em `drafts/correcoes_literatura.md` (L1–L8).
+- **Giannakakis et al. 2019** (ACIIW, DWNet1D): dataset próprio, 24 pessoas, 4 tipos de
+  stressor; CNN 1D multi-kernel sobre a série RR (crua ou normalizada pela baseline);
+  >1,1 M parâmetros; janelas de 60 s com passo de 3 s, geradas depois do 6-fold por sujeito;
+  um modelo por stressor. 89,8% = média de 8 (4 stressores × 2 entradas); máx. 99,1%.
+  Os 84% com features de HRV + ML são de outro artigo do grupo (ACII 2019) e comparados
+  com os 99,1%: não é comparação controlada. Não fala de biofeedback (a Introdução cita-o
+  para isso: L7).
+- **Hong et al. 2020** (Comput. Biol. Med. 122:103801): 191 artigos de DL em ECG
+  (2010–fev/2020), quase só doença cardíaca. "CNN+RNN ensemble using expert features
+  yields the best results" assenta na Tabela 3 (FA no CinC 2017; 9 métodos entre F1
+  0,818 e 0,831). Não é sobre stress; não vai para a tabela `classifiers_new`. Na tese
+  o G (rede + features) não supera o F (só série).
+
+# Conv 1D e literatura recente para o Cap. 2 (2026-09-28, verificado nos originais)
+
+Não existe Model H (modelos A–G; E/F/G = ablação entrada × arquitetura). A subsecção
+"Deep Learning Models Selected" (Contribution.tex) não tem nenhum \cite. Cap. 2: 96 refs
+únicas, 47 anteriores a 2020; piores: "Detection of Stress" (11/12), ultra-curto (5/5),
+"ECG Preprocessing" (11/11), fundamentos de ML. PDFs em `~/Downloads/artigos/`
+(`artigouni1.pdf` = tese Ismail Fawaz 2020, "Deep Learning for Time Series Classification",
+arXiv:2010.00567, não está no .bib).
+- `article8` Giannakakis 2019: CNN 1D multi-kernel sobre série RR (crua ou normalizada pela
+  baseline do sujeito), janelas 60 s, 24 sujeitos, 6-fold por sujeito, 89,8% (ML com features
+  no mesmo dataset: 84%, = `article17`). `article6` Cho 2019: Conv 1-D sobre ECG bruto
+  10/30/60 s, 10-fold por sujeito, 90,19%. `article33` He 2019: CNN, 10 s, 20 pessoas, erro
+  17,3% (só resumo). `article11` Hong 2020: melhor = CNN+RNN com features de especialista.
+- **Prajod, Mahesh & André 2024** (ICMI '24, doi 10.1145/3678957.3685738): HRV (22 features,
+  NeuroKit2, 60 s), LOSO, WESAD/SWELL/ForDigitStress/VerBIO. SWELL dentro: F1 0,60–0,67.
+  WESAD→SWELL: F1 0,42–0,47, acc 0,44–0,48. SWELL→WESAD: acc 0,48–0,68. SWELL+WESAD juntos:
+  WESAD −12 pp F1. Datasets de stress social generalizam entre si; conclusão: "stressor type".
+  Normalização min-max por participante com 5 min de neutro.
+- **Prajod & André 2022** (ICMLA, arXiv 2210.06225): WESAD e SWELL; DL em ECG bruto melhor
+  dentro do dataset, features de HRV transferem melhor entre datasets.
+- **Mishra et al. 2020** (IMWUT, doi 10.1145/3432220): 90 pessoas, 4 estudos; limiar por
+  agrupamento no novo estudo > limiar do treino.
+- **Vos et al. 2023a** (IJMI 173:105026): revisão; a maioria dos estudos não generaliza.
+  **Vos et al. 2023b** (JBI 148:104556): EDA+HR, janelas 25 s; SWELL→WESAD ~50–68%;
+  treino em SWELL+NEURO+UBFC (sem WESAD) → 85% no WESAD.
+- **Kapoor & Narayanan 2023** (Patterns 4:100804): leakage em 294 artigos de 17 áreas.
+- **Nkurikiyeyezu et al. 2020** (Sensors and Materials): calibração pessoal no SWELL.
+- **Quigley et al. 2024** (Psychophysiology 61:e14604): guia SPR de HR/HRV (ECG e PPG).
+- **Pham et al. 2021** (Sensors 21:3998): revisão de índices de HRV + tutorial.
+- **Shaffer, Meehan & Zerr 2020** (Front. Neurosci., doi 10.3389/fnins.2020.594880): ultra-curto.
+- **Makowski et al. 2021** (Behav. Res. Methods 53:1689): NeuroKit2.
+- **Kiranyaz et al. 2021** (MSSP 151:107398): survey de CNN 1D.
+- **Bent et al. 2020** (npj Digit. Med. 3:18): fontes de erro do PPG ótico.
+- Haque 2024 (PDF) cobre 2016–2021 e diz "There is no agreed standard for stress evaluation
+  at present". Resp-BoostNet: k-fold (k=8), sem LOSO. Xia: divisão aleatória, 100% com 14 features.
+
+- Documento de correções: `drafts/correcoes_literatura_recente.md` (R1–R22 + 20 entradas .bib; R19–R22 no Cap. 4),
+  a aplicar **depois** do `drafts/correcoes_literatura.md` (L1–L7). Validado a 28/09 contra o zip
+  de 27/09 com L aplicado: 22 itens pendentes → aplicados, sem problemas (só `articleoptimisers`,
+  que é da secção H).
+
+# Terceira avaliação externa (2026-09-29): verificações nos dados
+
+Avaliador independente só com o zip de 29/09 (15:00). Triagem completa em
+`drafts/triagem_avaliacao_3.md`. Scripts novos em `Classification Models/` (dados V6_wesad).
+
+## Baseline só com FC — `hr_only_baseline.py` → `results_wesad_v6_hr_only.csv`
+LogReg sem pesos, mesmos protocolos do `wesad_baselines.py` (a linha "8 features" reproduz
+a LogReg da tese ao decimal).
+```
+                 aleatório        GroupKFold        LOSO
+hr_mean          AUC 0,882        0,889 ± 0,099     0,925 ± 0,116   sens 58/58/57
+n_beats          0,889            0,899             0,942
+8 features       0,922            0,913             0,939
+```
+Emparelhado por fold contra hr_mean: G GKF +0,030 AUC (p=0,36), LOSO +0,045 (p=0,079);
+LogReg-8 GKF +0,024 (p=0,24), LOSO +0,014 (p=0,70). **Em sujeitos novos nenhum modelo
+tem AUC significativamente acima da FC sozinha.** A sensibilidade do G a 0,5 é maior
+(+25,7 pp LOSO, p=0,03), mas é efeito de limiar/pesos (a LogReg não tem pesos).
+
+## De onde vem o f(baseline)=0,916 do G — `model_g_baseline_check.py` (pesos V6, seed 42)
+Entradas reais: P média 0,402 (prevalência no treino 0,360; P média no treino 0,399) →
+os pesos de classe só deslocam a probabilidade média ~4 pp. Baseline da tese 0,916;
+série com a variabilidade real mas recentrada na média do treino (resumo na média) 0,765;
+série plana + resumo real 0,724; série real + resumo na média 0,475 (0,256 / 0,869 por classe).
+Leitura: a série plana soma ~0,15; o resto vem de a janela "média" (FC ≈ 82 bpm) ficar do
+lado do stress da fronteira do G. **A frase "consistent with the class weighting" (4.4.4)
+não se sustenta**; o avaliador tem razão.
+
+## Calibração só com repouso — `rest_normalisation.py` → `results_v6_rest_normalisation.csv`
+Mesmo LOSO e mesma divisão temporal do `personalised_protocol.py`; cada sujeito centrado
+(ou z-score) pela 1.ª metade do seu baseline, **sem janelas de stress**; LogReg sem pesos, 0,5.
+```
+                         exat.   DP     pior   espec.mín  <70%
+LogReg 8 feat., centre   88,22  14,52   62,07   73,68      3
+LogReg 8 feat., zscore   87,74  14,57   62,07   52,63      3
+LogReg hr_mean, centre   87,32  14,16   62,07   73,68      3
+(tese) G limiar próprio  91,12   7,41   73,33   68,42      0
+(tese) LogReg A / B      81,40 / 85,92
+```
+centre − LogReg A +6,82 pp (t p=0,056; Wilcoxon 0,047); centre − G B −2,91 (p=0,42).
+Falta correr o G com a mesma normalização (~30–40 min).
+
+## Outros factos verificados
+- Limiar "1,00" da 4.6.3 = **0,997** (S10 e S11). S10 com 0,997: espec. 100%, sens 66,7%;
+  S11: 96,7%. Não é "nunca prever stress"; é saída saturada perto de 1 nesses sujeitos.
+- Sensibilidade por sujeito (média dos folds): GKF LogReg 73,78 · RF 74,55 · E 82,79 ·
+  F 82,23 · G 81,05 · A 81,55 · B 76,95 · C 82,48 · D 77,25; LOSO LogReg 71,59 · RF 72,68 ·
+  E 81,76 · F 84,08 · G 82,85 · A 83,01 · B 77,01 · C 83,01 · D 78,86. Em sujeitos novos as
+  redes têm sens ≥ espec. (G LOSO 82,85 / 83,91), ao contrário do aleatório (81,54 / 94,36).
+- Filtro do WESAD (`filtering_wesad.ipynb`): Butterworth de ordem 2, `filtfilt` (fase zero),
+  0,5–40 Hz, na gravação inteira. O `biosppy.ecg.ecg()` aplica ainda um FIR passa-banda
+  3–45 Hz de ordem int(0,3·fs) a cada segmento. O Hamilton (biosppy 0.8.0) reinicializa em
+  cada segmento de 30 s (`init_ecg = 8` s); o intervalo que atravessa a fronteira perde-se.
+- Model A (`model2_simple`) **não tem batch normalisation** (Contribution l.193 diz que os 4 têm).
+- `article10` (Maritsch 2019) é sobre smartwatches, mas HRV por PPG; `article6`, `article9`,
+  `article20` não são sobre smartwatches. `velmovitsky2022apple` (ECG de 30 s do Apple Watch)
+  já está no .bib e é citado no SotA l.416.
+
+## Artigo do WESAD (Schmidt et al., ICMI 2018) — verificado 2026-09-29
+PDF em `~/Desktop/Tese 2026/artigos_teses/wesad/ubi_icmi2018.pdf`.
+- Baseline de 20 min, sempre **primeiro** (versões A e B só trocam diversão e stress, Fig. 2).
+- Postura: "the baseline, amusement and stress conditions were conducted either standing or
+  sitting. For each condition, approximately half of the subjects were standing and the other
+  half were sitting" → a postura **não** é confundidor ao nível do dataset.
+- Fala: "the study participants spoke during the TSST. Hence, the classifiers might have
+  partially learned to distinguish between speaking (stress condition) and non-speaking".
+- Tarefa binária = baseline + diversão vs TSST; janelas de 60 s (passo 0,25 s); LOSO.
+  **Só ECG do peito (Tabela 4), exatidão / F1:** DT 80,17/77,01 · RF 82,78/79,64 ·
+  AB 83,37/80,20 · **LDA 85,44/81,31** · kNN 79,19/75,39. A nossa LOSO (30 s, sem diversão):
+  74,75–83,74%, LogReg 82,60%.
+- G − LogReg em LOSO (AUC): +0,031, IC95 [−0,024; +0,086], p=0,245 (`hr_only_baseline.py`,
+  que também imprime a sensibilidade/especificidade por sujeito de todos os modelos).
+
+# Quarta avaliação externa (2026-09-29, fim do dia) — verificações
+
+Zip de 29/09 16:57. Confirmado no texto: notas a vermelho (Contribution l.223, l.314;
+Applications l.79), instruções do template no Copyright.tex, F1 ×100 duas vezes
+(eq. `f1score`, com precisão e sensibilidade já ×100), gralhas ("so is not used",
+"a annotation file", "among others factors", "sampled of 10, 30 or 60 seconds",
+"thirty seconds,a", "configuration … has not been evaluated", "will be used", "We use"),
+"spatial feature extraction" (l.174/179), "more resistant to overfitting" (l.168),
+Intro l.90 ("DL is scarce … promising") e l.94 ("interpretability … feasible"),
+SotA l.389 ("necessary instruments for demonstrating legal compliance") vs l.393
+("does not prescribe specific XAI techniques"), SotA l.540 ("subject-level memorisation"),
+URL do SWELL em easy.dans.knaw.nl, declaração de integridade sem referência a IA.
+.bib: `Vaswani2017` e `article35` são @article com booktitle; `article10/15/17/19` sem
+journal; `malviya2023lstm` @inbook sem booktitle; misc `pickle`, `r_peaks_biosppy`,
+`rr_interval_pyHRV`, `googlenn`, `neuronSite` sem year (têm urldate); `neuron` é @phdthesis.
+
+**Validação nos protocolos por sujeito:** o código baralha os índices de treino antes do
+`validation_split` em todos os protocolos (`train_sequence.py` l.170–175,
+`retrain_v5.py` l.133–136) → validação = 20% aleatório das janelas dos sujeitos de treino.
+O texto (Contribution l.219) só diz "in random order under the random split" → corrigir.
+
+**Nadeau–Bengio com a validação descontada** (`corrected_ttest.py --prefix results_wesad_v6
+--ratio 0.3125`, 20/64 em vez de 20/80; só lê CSVs):
+- G: igual — só a exatidão vs A sobrevive (Holm NB 0,038).
+- F: exatidão vs LogReg (0,042) e RF (0,031), AUC vs A (0,022), **PR-AUC só vs A (0,025)**;
+  vs B–E, LogReg, RF passa a 0,054–0,057. Com 0,25 a PR-AUC do F sobrevivia vs os 7.
+- F2−F1 (D): IC NB [−5,01; +3,25].
+→ "a vantagem é robusta para o F em PR-AUC" depende da razão escolhida; dizer as duas.
+
+**Calibração só com repouso:** t p = 0,056 (n.s.), Wilcoxon 0,047. Reportar os dois só
+porque um passa é escolha seletiva: usar o t (como no resto) e dizer que não é significativo.

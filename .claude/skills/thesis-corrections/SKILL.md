@@ -38,9 +38,9 @@ reais das gravações). Classificador do sistema: **Model G** (Dual-Input CNN).
 | `references/etl-v5.md` | O ETL corrigido (a V6 só muda as durações) |
 | `scripts/validate.py` | Re-corre as validações de base |
 | `drafts/correcoes_finais.md` | O documento de correções aplicado (secção H: o que ainda falta) |
-| `drafts/estado_aplicacao.py <zip> <md>` | Diz, item a item, o que já está aplicado num zip |
-| `drafts/simular_aplicacao.py <zip> <md>` | Aplica um `.md` a uma cópia e verifica refs, cites, gls e chavetas |
-| `drafts/check_procura.py <md> <zip>` | Valida que cada termo de pesquisa é único |
+| `drafts/estado_aplicacao.py <pasta extraída> <md>` | Diz, item a item, o que já está aplicado num zip |
+| `drafts/simular_aplicacao.py <pasta extraída> <md>` | Aplica um `.md` a uma cópia e verifica refs, cites, gls e chavetas |
+| `drafts/check_procura.py <md> <pasta extraída>` | Valida que cada termo de pesquisa é único |
 | `README.md` (raiz) | Atualizado para a V6 a 2026-09-27 |
 
 ## O achado central
@@ -119,17 +119,31 @@ excluídas (apêndice A.1.1: −5,76 vs −5,26 bpm, 18/20).
 **`stress_feedback_agent.py` só carrega modelos de entrada (8,1)** (os A–D); o
 modelo por omissão (`used_model.h5`) foi apagado na limpeza.
 
-## Estado (2026-09-27, zip das 18:37)
+## Estado (2026-09-29, zip das 18:03)
 
-Aplicado: todas as correções da supervisora, das duas avaliações externas e a
-V6 inteira, exceto o que a autora decidiu não aplicar (abaixo). **Falta a secção
-H do `correcoes_finais.md`:** gralha "a a system", a chave de citação
-`articleoptimisers` → `articleOptimizers`, e a figura `gradient_by_class_mean_G.png`
-com "N=189" (substituir pela de `results/model_G_v6/`).
+As 11 correções do `correcoes_minimas.md` estão no zip das 18:03 (verificado; simulação sem
+problemas). Artifact "HRV30 do zero" (claude.ai/artifact/EMfK78QFZpkXYsNo3G2VMA) atualizado
+para este estado.
 
-A autora vai **reescrever o Cap. 4 na sua voz**. Depois, verificar números e
+Aplicados no zip: a secção H do `correcoes_finais.md` e o **`drafts/correcoes_avaliacao3.md`**
+(3.ª avaliação externa; triagem em `drafts/triagem_avaliacao_3.md`). Tudo verificado palavra a
+palavra, exceto a **T19**, que entrou a meio: sem SD1/SD2/Brennan e com a gralha "so is not
+used". A correção está no item T19b, no fim do documento. A simulação do zip não dá problemas.
+Números novos no fim do `facts.md`: FC sozinha, calibração só com repouso, origem do 0,916 do
+IG e a referência de ECG do Schmidt 2018.
+
+Nota: o `estado_aplicacao.py` e o `simular_aplicacao.py` recebem a **pasta extraída**, não o
+`.zip`. Com o `.zip` dão tudo "CONFLITO (0x)".
+
+**Quarta avaliação (29/09, noite):** a autora está saturada e entrega à orientadora a
+1/10. Pediu o mínimo: **`drafts/correcoes_minimas.md`** (11 itens, validado contra o zip
+de 16:57). Notas a vermelho, copyright, bibliografia, gralhas e o ×100 do F1 ficam para a
+reescrita dela. **O título fica.** O anexo de uso de IA generativa é preenchido por ela.
+Não propor mais rondas de avaliação nem listas longas.
+
+A autora está a **reescrever a tese na sua voz**. Depois, verificar números e
 afirmações contra o fim do `facts.md` (qualificadores de significância, G≈F,
-vantagem da série só no aleatório, limites da calibração).
+vantagem da série só no aleatório, FC sozinha, limites da calibração).
 
 ## Decisões da autora (não repropor)
 
@@ -144,9 +158,17 @@ vantagem da série só no aleatório, limites da calibração).
 - **V6 adotada** (2026-09-26).
 - Os nomes dos apêndices ficam; o índice e o glossário ficam (o índice tem entradas
   das macros do `dissertation.sty`); a Fig. 3.2 fica como está (2026-09-27).
-- **SWELL vs WESAD "com a mesma bitola"** (baseline do WESAD também primeiro; fala e
-  postura no TSST; "validated stress response"; "the cause is traced"): **não entra
-  no texto**; é tema para a defesa (2026-09-27).
+- **SWELL vs WESAD "com a mesma bitola" ENTRA no texto** (2026-09-29; reverte a
+  decisão de 2026-09-27). Secção W do `correcoes_avaliacao3.md`: baseline do WESAD
+  também primeiro, fala no TSST (a postura foi equilibrada entre condições, ver o
+  artigo), "most likely explanation" em vez de "the cause". Sem autorrelato.
+- **A escolha do G é discutida no texto com as alternativas** (2026-09-29): a escolha
+  fica, mas não se apoia em G − E (não sobrevive a Nadeau–Bengio) e o texto diz que a
+  FC sozinha e a LogReg centrada no repouso não são significativamente piores.
+- **Parar de escrever código** (2026-09-29). As críticas respondem-se alinhando o
+  texto com a evidência e declarando limitações. Não propor experiências novas
+  (G com normalização pelo repouso, curva de janelas, BVP, nested CV, determinismo,
+  tarefa padrão do WESAD): ficam como limitações ou trabalho futuro.
 - **Não aplicados por decisão (2026-09-27):** B7 (LF/HF com a crítica de Billman),
   D2 (cortar a subsecção "Deep Learning Frameworks" — a orientadora não pediu), e a
   Fig. 3.1: a autora tirou o texto da `proposed_approach_new.png` para não voltar a
