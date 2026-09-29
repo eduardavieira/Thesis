@@ -37,7 +37,7 @@ reais das gravações). Classificador do sistema: **Model G** (Dual-Input CNN).
 | `references/corrections-v5.md` | Cada pedido da supervisora e onde foi resolvido |
 | `references/etl-v5.md` | O ETL corrigido (a V6 só muda as durações) |
 | `scripts/validate.py` | Re-corre as validações de base |
-| `drafts/correcoes_finais.md` | O documento de correções aplicado (secção H: o que ainda falta) |
+| Rascunhos de correções já aplicados | Apagados a 2026-09-29; estão no histórico do git (commit `a2430d2`): `git show a2430d2:drafts/<nome>.md` |
 | `drafts/estado_aplicacao.py <pasta extraída> <md>` | Diz, item a item, o que já está aplicado num zip |
 | `drafts/simular_aplicacao.py <pasta extraída> <md>` | Aplica um `.md` a uma cópia e verifica refs, cites, gls e chavetas |
 | `drafts/check_procura.py <md> <pasta extraída>` | Valida que cada termo de pesquisa é único |
@@ -120,6 +120,10 @@ excluídas (apêndice A.1.1: −5,76 vs −5,26 bpm, 18/20).
 modelo por omissão (`used_model.h5`) foi apagado na limpeza.
 
 ## Estado (2026-09-29, zip das 18:03)
+
+Limpeza do repositório (29/09, aprovada pela autora): apagados `comandos.sh`, o notebook de
+`pip install`, `__pycache__` e os rascunhos de correções já aplicados (recuperáveis do commit
+`a2430d2`). Os resultados da V5 e o `_old.zip` ficam, por decisão de 27/09.
 
 As 11 correções do `correcoes_minimas.md` estão no zip das 18:03 (verificado; simulação sem
 problemas). Artifact "HRV30 do zero" (claude.ai/artifact/EMfK78QFZpkXYsNo3G2VMA) atualizado
