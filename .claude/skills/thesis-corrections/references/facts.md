@@ -2503,3 +2503,39 @@ O texto (Contribution l.219) só diz "in random order under the random split" �
 
 **Calibração só com repouso:** t p = 0,056 (n.s.), Wilcoxon 0,047. Reportar os dois só
 porque um passa é escolha seletiva: usar o t (como no resto) e dizer que não é significativo.
+
+# Explicabilidade com HRV noutros artigos: redundância (verificado 2026-09-30)
+Pergunta da autora: os outros estudos também têm features redundantes? (textos do Europe PMC
+e da Frontiers; o PMC bloqueia com reCAPTCHA)
+- **Byun et al. 2025** (Front. Psychiatry, `byun2025automated`): 20 features de HRV, incluindo
+  mean RRI, SDNN, RMSSD, SD1 e SD2 (SD1 ≈ RMSSD/√2); "we did not conduct feature selection
+  separately"; SHAP; não discute colinearidade. Depois da escala por pessoa, o RRI domina.
+- **Chatterjee et al. 2025** (Sci Rep, doi 10.1038/s41598-025-87510-w): SWELL-KW, features
+  incluem MEAN_RR, HR, RMSSD, SDSD, SD1, SD2, pNN25, pNN50; algoritmo genético para "eliminate
+  irrelevant and redundant features" (desempenho), depois RF + SHAP TreeExplainer. Não diz como
+  a correlação afeta o SHAP.
+- **Behradfar et al. 2025** (Sensors 25:4154): 93 features de HRV, preocupação explícita com
+  redundância (mRMR, RFE, LASSO, LOSO aninhado), mas sem XAI.
+- **Moser et al. 2024** (`moser2024explainable`, Sensors 24:5085): **não usa HRV** — EDA e
+  temperatura da pele (Empatica, 1 Hz, janelas de 16 s); IG com referência vetor zero, média
+  sobre as amostras de stress; recomenda juntar HR/HRV no futuro. Não discute a referência.
+- **Jadav & Chauhan 2024** (`jadav2024lstm`, IJISAE 12(3):1918–1927; PDF em
+  `~/Downloads/IJISAE_10_JignaJadav_3_20619.pdf`, verificado 2026-09-30): SWELL-KW, features de
+  tempo, frequência e não lineares (lista SDSD, RMSSD, SD1, SD2, pNN25, pNN50, RR/HR); "PCA … is
+  employed for feature selection" → 26 features (não explica como a PCA escolhe features);
+  LSTM, divisão 75/25 sem separar sujeitos, 98%; SHAP `DeepExplainer` com dataset de fundo.
+  Descreve o que são o dependence plot e o waterfall, mas **não nomeia nenhuma feature nem
+  sentido** no texto, e não fala de correlação nem redundância.
+
+## Xia, Zeng, Ni & Jin 2024 (chave `song2024cnn`!) — verificado no original 2026-09-30
+J. Artif. Intell. 6(1):361–377, doi 10.32604/jai.2024.059114 (HTML em techscience.com/jai/v6n1/58897).
+- SWELL-KW das **features pré-calculadas do Kaggle** (qiriro/swell-heart-rate-variability-hrv),
+  34 features; ordenadas por correlação de Pearson com o rótulo (em todos os dados) → 16 com
+  |r| > 0,1; 7 features 99,01%, 14 features 100% (99,99%). **3 classes** (sem stress, pressão
+  de tempo, interrupções). "Given the random splitting process used, five-fold cross-validation".
+- WESAD: "intra-dataset testing on SWELL-KW and cross-dataset testing on WESAD"; relatam 97,68%
+  no WESAD, mas **não descrevem** como (que features, que janelas, se retreinaram). Não juntam
+  os dois datasets. O resumo dá "98.84% to 99.31%".
+- O mesmo conjunto do Kaggle tem centenas de milhares de linhas para 25 pessoas (Mortensen
+  410 322; Dahal 527 288) → janelas muito sobrepostas; com partição aleatória, linhas quase
+  iguais da mesma pessoa e bloco ficam no treino e no teste.
