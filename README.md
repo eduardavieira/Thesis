@@ -8,6 +8,10 @@ processing and HRV feature extraction, classical and deep learning classifiers,
 subject-independent evaluation, per-subject threshold calibration,
 gradient-based explainability, and an AI feedback agent.
 
+The final, submitted version of the thesis is revision V8. Its LaTeX source,
+exported from Overleaf, is `V8_Tese_Eduarda_Vieira_Detecao_Stress_HRV_ECG.zip`.
+The submitted PDF is the same version with signatures added.
+
 ---
 
 ## Key findings
@@ -55,6 +59,9 @@ superseded, for four reasons:
   five recordings (the WESAD baseline of subject 2 was cut into 22.9-second
   windows; one SWELL-KW recording into 13-second windows). Since revision V6 the
   duration is the number of samples divided by the sampling rate.
+
+The V5 result files and models were removed after submission. They remain in
+the git history.
 
 ---
 
@@ -178,6 +185,8 @@ wearable.
 ## Repository structure
 
 ```
+V8_Tese_Eduarda_Vieira_Detecao_Stress_HRV_ECG.zip   # LaTeX source of the submitted thesis
+
 Data Processing/
 ├── RPeakDetection_HRV_fixed.py     # ETL: ECG -> HRV features + NN series
 ├── fix_durations.py                # duration of each recording = samples / sampling rate
@@ -203,18 +212,17 @@ Classification Models/
 ├── model_g_permutation.py          # within-window permutation test of beat order
 ├── model_g_faithfulness_ref.py     # faithfulness against all 28 pairs of summary features
 ├── appendix_tables.py              # appendix tables of recording durations
-├── compare_v5_v6.py                # V5 vs V6 results
+├── hr_only_baseline.py             # mean heart rate alone as a classifier
+├── rest_normalisation.py           # features centred on each subject's rest windows
+├── model_g_baseline_check.py       # where Model G's 0.916 at the Integrated Gradients baseline comes from
 ├── stress_feedback_agent.py        # AI feedback agent (Anthropic API + local fallback)
 ├── results_*v6*.csv                # per-seed / per-fold results behind the thesis
-├── results_*.csv (without v6)      # V5 results, kept for reference
 ├── logs_v6/                        # summaries of the V6 analyses (dataset, XAI, reports)
 ├── results/
 │   ├── model_G_v6/                 # Model G explainability figures and summaries (thesis)
-│   ├── ci_tables_v6.tex            # WESAD tables and the confidence-interval appendix
-│   └── model_G/, ci_tables.tex     # V5 versions, kept for reference
+│   └── ci_tables_v6.tex            # WESAD tables and the confidence-interval appendix
 └── saved_models/
-    ├── wesad_model_G_v6.weights.h5 # Model G trained on WESAD (seed 42), behind the figures
-    └── wesad_model_G.weights.h5, wesad_model.h5   # V5 Models G and D
+    └── wesad_model_G_v6.weights.h5 # Model G trained on WESAD (seed 42), behind the figures
 ```
 
 ---
@@ -329,8 +337,9 @@ pip install tensorflow==2.13.1 scikit-learn pandas numpy scipy matplotlib \
 ## Usage
 
 The paths to the raw data and to the processed files are set at the top of
-`run_v6.sh`. Several scripts default to the V5 files; pass the V6 paths
-explicitly, as `run_v6.sh` does.
+`run_v6.sh`. Several scripts still default to the names of the V5 files, which
+are no longer in the repository; pass the V6 paths explicitly, as `run_v6.sh`
+and the commands below do.
 
 ### 1. Extract features
 
@@ -364,7 +373,8 @@ cd "Classification Models"
 python3 dataset_analysis.py --csv ProcessedECGData_v6.csv --series NNSeries_v6.npz \
                             --pooled-out results_v6_pooled_baselines.csv
 python3 pr_report.py --v6                 # numbers and paired tests quoted in the thesis
-python3 corrected_ttest.py --prefix results_wesad_v6
+python3 corrected_ttest.py --prefix results_wesad_v6 \
+  --f1 results_wesad_v6_F1_D.csv --f2 results_wesad_v6_F2_D.csv
 python3 confidence_intervals.py --v6      # -> results/ci_tables_v6.tex
 
 python3 personalised_protocol.py --csv ProcessedECGData_v6_wesad.csv \
@@ -453,7 +463,7 @@ content for the predicted class, so the user still gets a usable message
 without connectivity.
 
 The model is configurable through `CLAUDE_MODEL` (default `claude-sonnet-5`).
-The earlier thesis revision used `claude-sonnet-4-20250514`, which the provider
+The thesis describes requests to `claude-sonnet-4-20250514`, which the provider
 retired on 15 June 2026.
 
 Example output for the stress label (WESAD test window 3, subject S8,

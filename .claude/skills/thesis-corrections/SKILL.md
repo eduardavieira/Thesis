@@ -10,6 +10,9 @@ learning, mais calibração do limiar por pessoa, explicabilidade e um agente de
 feedback via LLM. Datasets: SWELL-KW + WESAD. Iteração atual: **V6** (durações
 reais das gravações). Classificador do sistema: **Model G** (Dual-Input CNN).
 
+**A tese está submetida** (outubro de 2026). Versão final: o zip **V8** do
+repositório; o PDF submetido (V9) é a V8 com as assinaturas.
+
 ## Antes de fazer seja o que for
 
 1. **Nunca editar o zip do Overleaf.** Extrair para o scratchpad para consultar;
@@ -36,8 +39,8 @@ reais das gravações). Classificador do sistema: **Model G** (Dual-Input CNN).
 | `references/codebase.md` | Mapa do código, scripts, armadilhas |
 | `references/corrections-v5.md` | Cada pedido da supervisora e onde foi resolvido |
 | `references/etl-v5.md` | O ETL corrigido (a V6 só muda as durações) |
-| `scripts/validate.py` | Re-corre as validações de base |
-| Rascunhos de correções já aplicados | Apagados a 2026-09-29; estão no histórico do git (commit `a2430d2`): `git show a2430d2:drafts/<nome>.md` |
+| `scripts/validate.py` | Re-corre as validações de base (a CSV de 2023 por omissão foi apagada a 2026-10-25; passar o caminho) |
+| Rascunhos de correções já aplicados | Apagados a 2026-09-29; estão no histórico do git (commit `a2430d2`): `git show a2430d2:drafts/<nome>.md`. O `correcoes_orientadora_v6.md` está no commit `d8151c3` |
 | `drafts/estado_aplicacao.py <pasta extraída> <md>` | Diz, item a item, o que já está aplicado num zip |
 | `drafts/simular_aplicacao.py <pasta extraída> <md>` | Aplica um `.md` a uma cópia e verifica refs, cites, gls e chavetas |
 | `drafts/check_procura.py <md> <pasta extraída>` | Valida que cada termo de pesquisa é único |
@@ -89,7 +92,7 @@ três linhas de evidência (4.1):
 
 **CSVs.** A boa é a **V6**: `/home/eduarda/Desktop/ProcessedECGData_v6.csv` +
 `NNSeries_v6.npz` (5409 janelas; `_v6_wesad` = só as 907 do WESAD, mesmas linhas).
-A V5 (`..._v5.*`, 5430) tinha janelas de 13–55 s em 5 ficheiros por causa das
+A V5 (`..._v5.*`, 5430; apagada do Desktop a 2026-10-25) tinha janelas de 13–55 s em 5 ficheiros por causa das
 durações erradas; usar `Data Processing/time_duration_v6.csv`. Vários scripts
 têm os caminhos da V5 por omissão: passar `--csv/--series/--weights` da V6 (ver
 `run_v6.sh` e o README). Selecionar features por nome.
@@ -118,6 +121,17 @@ excluídas (apêndice A.1.1: −5,76 vs −5,26 bpm, 18/20).
 
 **`stress_feedback_agent.py` só carrega modelos de entrada (8,1)** (os A–D); o
 modelo por omissão (`used_model.h5`) foi apagado na limpeza.
+
+## Limpeza final (2026-10-25, aprovada pela autora)
+
+Depois da submissão saíram do repositório: os zips V5–V7, os 50 `results_*.csv` sem `v6`,
+`results/model_G/`, `results/ci_tables.tex`, as figuras de explicabilidade anteriores ao G
+(`results/case_studies/` e os PNG soltos em `results/`), `logs_v6/pr_report_v5.txt`, os
+modelos `wesad_model_G.weights.h5` e `wesad_model.h5` (V5) e o `compare_v5_v6.py`. Estão
+todos no histórico do git (o commit anterior à limpeza é o `d8151c3`). No Desktop saíram as
+CSV/NPZ de 2023 e da V5, as notas `.odt`, a tabela f1/f2 e cópias antigas em `Tese 2026/`.
+Os dados brutos (`Tese 2026/Datasets`, 9,3 GB) ficam **até à defesa**. Os `drafts/*.py`
+ficam para eventuais correções pedidas pelo júri.
 
 ## Estado (2026-09-29, zip das 18:03)
 
@@ -177,4 +191,5 @@ vantagem da série só no aleatório, FC sozinha, limites da calibração).
   D2 (cortar a subsecção "Deep Learning Frameworks" — a orientadora não pediu), e a
   Fig. 3.1: a autora tirou o texto da `proposed_approach_new.png` para não voltar a
   ficar desatualizado.
-- Ficam no repositório os resultados da V5 e o `V5_Tese_..._old.zip`.
+- ~~Ficam no repositório os resultados da V5 e o `V5_Tese_..._old.zip`.~~ Revertida a
+  2026-10-25: saíram na limpeza final (estão no histórico do git).
