@@ -8,9 +8,7 @@ processing and HRV feature extraction, classical and deep learning classifiers,
 subject-independent evaluation, per-subject threshold calibration,
 gradient-based explainability, and an AI feedback agent.
 
-The final, submitted version of the thesis is revision V8. Its LaTeX source,
-exported from Overleaf, is `V8_Tese_Eduarda_Vieira_Detecao_Stress_HRV_ECG.zip`.
-The submitted PDF is the same version with signatures added.
+The LaTeX source of the thesis is `V8_Tese_Eduarda_Vieira_Detecao_Stress_HRV_ECG.zip`.
 
 ---
 
@@ -43,25 +41,6 @@ but per-subject accuracy ranges from 36.1% to 100% and specificity from 0% to
 100%. Choosing the threshold of Model G on about 15 minutes of each subject's
 own recording raises its accuracy on the rest of the session from 82.1% to
 91.1%, and that of the worst subject from 48.4% to 73.3%, without retraining.
-
-### Note on earlier results
-
-Earlier revisions of this repository reported other figures (60.68% for a
-CNN-Transformer on the pooled dataset; later 89.95% for Model G). They are
-superseded, for four reasons:
-
-- The original RR-interval filter modified a list while iterating over it, so
-  about 24% of windows kept physiologically implausible intervals.
-- Windows were split at random, so the same participant appeared in both train
-  and test.
-- The two datasets have opposite labels, as described above.
-- The segment length was derived from annotated durations that did not match
-  five recordings (the WESAD baseline of subject 2 was cut into 22.9-second
-  windows; one SWELL-KW recording into 13-second windows). Since revision V6 the
-  duration is the number of samples divided by the sampling rate.
-
-The V5 result files and models were removed after submission. They remain in
-the git history.
 
 ---
 
@@ -185,7 +164,7 @@ wearable.
 ## Repository structure
 
 ```
-V8_Tese_Eduarda_Vieira_Detecao_Stress_HRV_ECG.zip   # LaTeX source of the submitted thesis
+V8_Tese_Eduarda_Vieira_Detecao_Stress_HRV_ECG.zip   # LaTeX source of the thesis
 
 Data Processing/
 ├── RPeakDetection_HRV_fixed.py     # ETL: ECG -> HRV features + NN series
@@ -195,7 +174,7 @@ Data Processing/
 └── Obtaining data/                 # dataset extraction (MATLAB for SWELL-KW, pickle for WESAD)
 
 Classification Models/
-├── run_v6.sh                       # every V6 experiment (ETL, WESAD, pooled, SWELL, transfer, XAI)
+├── run_v6.sh                       # every experiment (ETL, WESAD, pooled, SWELL, transfer, XAI)
 ├── Data.py, Models.py              # loading, normalisation and Models A–D
 ├── retrain_v5.py                   # Models A–D: multi-seed, F1/F2, random/GroupKFold/LOSO, per dataset
 ├── train_sequence.py               # Models E, F, G (summary MLP, NN series, both)
@@ -217,7 +196,7 @@ Classification Models/
 ├── model_g_baseline_check.py       # where Model G's 0.916 at the Integrated Gradients baseline comes from
 ├── stress_feedback_agent.py        # AI feedback agent (Anthropic API + local fallback)
 ├── results_*v6*.csv                # per-seed / per-fold results behind the thesis
-├── logs_v6/                        # summaries of the V6 analyses (dataset, XAI, reports)
+├── logs_v6/                        # summaries of the analyses (dataset, XAI, reports)
 ├── results/
 │   ├── model_G_v6/                 # Model G explainability figures and summaries (thesis)
 │   └── ci_tables_v6.tex            # WESAD tables and the confidence-interval appendix
@@ -336,10 +315,14 @@ pip install tensorflow==2.13.1 scikit-learn pandas numpy scipy matplotlib \
 
 ## Usage
 
-The paths to the raw data and to the processed files are set at the top of
-`run_v6.sh`. Several scripts still default to the names of the V5 files, which
-are no longer in the repository; pass the V6 paths explicitly, as `run_v6.sh`
-and the commands below do.
+The raw data are not in the repository; download both datasets (see
+[Datasets](#datasets)) and extract the ECG with the scripts in
+`Data Processing/Obtaining data/`. `run_v6.sh` reads the paths from two
+environment variables: `RAW_DIR`, the folder with the raw ECG CSV files
+(default `data/raw` at the root of the repository), and `DATA_DIR`, the folder
+for the extracted features and NN series (default `data`). The `data/` folder is
+ignored by git. The default paths of several scripts point to files outside the
+repository; pass the paths explicitly, as `run_v6.sh` and the commands below do.
 
 ### 1. Extract features
 
@@ -361,6 +344,7 @@ aligned row by row, so always generate them in the same run.
 
 ```bash
 cd "Classification Models"
+export RAW_DIR=/path/to/raw/ecg DATA_DIR=/path/to/data   # optional, see above
 
 ./run_v6.sh etl_wesad          # WESAD-only extraction (fast)
 ./run_v6.sh base               # reference classifiers on WESAD
@@ -370,15 +354,15 @@ cd "Classification Models"
 ./run_v6.sh swell_transfer     # SWELL-KW by subject + cross-dataset transfer
 ./run_v6.sh f1f2_xai           # F1/F2 ablation + Model G explainability
 
-python3 dataset_analysis.py --csv ProcessedECGData_v6.csv --series NNSeries_v6.npz \
-                            --pooled-out results_v6_pooled_baselines.csv
+python3 dataset_analysis.py --csv "$DATA_DIR/ProcessedECGData_v6.csv" \
+  --series "$DATA_DIR/NNSeries_v6.npz" --pooled-out results_v6_pooled_baselines.csv
 python3 pr_report.py --v6                 # numbers and paired tests quoted in the thesis
 python3 corrected_ttest.py --prefix results_wesad_v6 \
   --f1 results_wesad_v6_F1_D.csv --f2 results_wesad_v6_F2_D.csv
 python3 confidence_intervals.py --v6      # -> results/ci_tables_v6.tex
 
-python3 personalised_protocol.py --csv ProcessedECGData_v6_wesad.csv \
-  --series NNSeries_v6_wesad.npz --models G,LogReg --scaler standard \
+python3 personalised_protocol.py --csv "$DATA_DIR/ProcessedECGData_v6_wesad.csv" \
+  --series "$DATA_DIR/NNSeries_v6_wesad.npz" --models G,LogReg --scaler standard \
   --out results_v6_personalised.csv
 ```
 
@@ -390,24 +374,30 @@ and `--features F1|F2`; `train_sequence.py` takes `--arch summary|seq|both`
 ### 3. Explainability
 
 ```bash
-V6="--csv ProcessedECGData_v6_wesad.csv --series NNSeries_v6_wesad.npz \
-    --weights saved_models/wesad_model_G_v6.weights.h5"
-python3 explain_model_g.py $V6 --load --out results/model_G_v6
-python3 model_g_directions.py $V6
-python3 model_g_permutation.py $V6 --out results_v6_model_g_permutation.csv
-python3 model_g_faithfulness_ref.py $V6
+ARGS="--csv $DATA_DIR/ProcessedECGData_v6_wesad.csv --series $DATA_DIR/NNSeries_v6_wesad.npz \
+      --weights saved_models/wesad_model_G_v6.weights.h5"
+python3 explain_model_g.py $ARGS --load --out results/model_G_v6
+python3 model_g_directions.py $ARGS
+python3 model_g_permutation.py $ARGS --out results_v6_model_g_permutation.csv
+python3 model_g_faithfulness_ref.py $ARGS
 ```
 
 ### 4. Feedback agent
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
-python3 stress_feedback_agent.py --prediction stress        # standalone, no model
+python3 stress_feedback_agent.py --prediction stress        # agent alone, no model
+
+# Model G classifies a WESAD test window (seed-42 random split) and passes its
+# label to the agent; windows 3 (S8, stress) and 0 (S7, baseline) are the two
+# shown in the thesis
+python3 stress_feedback_agent.py --csv "$DATA_DIR/ProcessedECGData_v6_wesad.csv" \
+  --series "$DATA_DIR/NNSeries_v6_wesad.npz" --sample 3
 ```
 
-The agent receives only the predicted label. Its built-in integration with a
-saved model (`--model ... --data ... --sample N`) supports the single-input
-Models A–D only; for Model G, obtain the label from `explain_model_g.py`.
+The agent receives only the predicted label. `--weights` defaults to
+`saved_models/wesad_model_G_v6.weights.h5`, and the windows are numbered as in the
+explainability analysis.
 
 ---
 
@@ -462,9 +452,9 @@ errors and malformed responses. On any failure the agent returns locally held
 content for the predicted class, so the user still gets a usable message
 without connectivity.
 
-The model is configurable through `CLAUDE_MODEL` (default `claude-sonnet-5`).
-The thesis describes requests to `claude-sonnet-4-20250514`, which the provider
-retired on 15 June 2026.
+Requests are issued to `claude-sonnet-4-20250514`, the model used in the thesis,
+with a maximum response length of 512 tokens. The model can be changed through
+the `CLAUDE_MODEL` environment variable.
 
 Example output for the stress label (WESAD test window 3, subject S8,
 classified as stress by Model G with probability 0.868):

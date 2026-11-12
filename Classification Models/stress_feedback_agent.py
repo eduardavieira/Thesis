@@ -1,30 +1,36 @@
 """
 Stress Feedback Agent
 =====================
-Uses the Claude API to generate personalized lifestyle intervention
-suggestions based on the output of the HRV stress detection model.
+Uses the Claude API to generate lifestyle intervention suggestions from the
+label predicted by the HRV stress detection model (Model G, thesis Section 3.8
+and Appendix "Demonstration of the Feedback Agent").
+
+The agent class depends only on an HTTP client. It never sees the model, the
+HRV values or the confidence score: it receives the predicted label alone.
 
 Usage:
-    # Run with a manual prediction:
-    python stress_feedback_agent.py --prediction stress
-    python stress_feedback_agent.py --prediction no_stress
+    # Agent alone, with a manually supplied label:
+    python3 stress_feedback_agent.py --prediction stress
+    python3 stress_feedback_agent.py --prediction no_stress
 
-    # Run directly from saved model + CSV data:
-    python stress_feedback_agent.py --model saved_models/used_model.h5 --data /path/to/ProcessedECGData.csv
+    # Full pipeline: Model G classifies one test window of the seed-42 random
+    # partition of WESAD, and its label is passed to the agent. Windows 3
+    # (subject S8, stress) and 0 (subject S7, baseline) are the two windows
+    # shown in the thesis.
+    python3 stress_feedback_agent.py --csv ProcessedECGData_v6_wesad.csv \
+        --series NNSeries_v6_wesad.npz --sample 3
 
-    Or use programmatically:
+    Or programmatically:
         from stress_feedback_agent import StressFeedbackAgent
         agent = StressFeedbackAgent()
-        response = agent.get_feedback("stress")
-        print(response)
+        print(agent.get_feedback("stress"))
 """
 
 import argparse
-import requests
-import json
-import numpy as np
 import os
 import sys
+
+import requests
 
 
 # ============================================================
@@ -32,13 +38,19 @@ import sys
 # ============================================================
 
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5")
+
+# Model used in the thesis; set CLAUDE_MODEL to use another one.
+MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-20250514")
 MAX_TOKENS = 512
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
+# Model G weights behind the thesis figures and the agent demonstration.
+DEFAULT_WEIGHTS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "saved_models", "wesad_model_G_v6.weights.h5")
+
 # System prompt — defines the agent's persona and behaviour
-SYSTEM_PROMPT = """You are a compassionate wellness assistant embedded in a smartwatch stress monitoring application. 
+SYSTEM_PROMPT = """You are a compassionate wellness assistant embedded in a smartwatch stress monitoring application.
 Your role is to provide brief, practical, and evidence-based lifestyle intervention suggestions based on the user's current stress state detected from their heart rate variability (HRV).
 
 Guidelines:
@@ -55,7 +67,7 @@ Guidelines:
 # Prompts sent to the model for each prediction case
 STRESS_PROMPT = """The HRV stress detection model has classified the user's current physiological state as STRESSED.
 
-Please provide 3 to 5 practical lifestyle intervention suggestions the user can act on right now to help manage and reduce their stress. 
+Please provide 3 to 5 practical lifestyle intervention suggestions the user can act on right now to help manage and reduce their stress.
 Focus on interventions that are quick (under 10 minutes), require no equipment, and are suitable for any environment (office, home, public transport).
 Keep the tone warm, calm and encouraging."""
 
@@ -157,7 +169,11 @@ class StressFeedbackAgent:
             )
             response.raise_for_status()
             data = response.json()
-            feedback = data["content"][0]["text"]
+            # Join the text blocks. Newer models may also return other block
+            # types (e.g. thinking) before the text, so the first block is not
+            # necessarily text.
+            feedback = "".join(block["text"] for block in data["content"]
+                               if block.get("type") == "text").strip()
 
         except requests.exceptions.Timeout:
             return self._fallback(prediction, "request timed out")
@@ -170,8 +186,12 @@ class StressFeedbackAgent:
         except ValueError as e:
             # Covers JSON decoding failures from response.json()
             return self._fallback(prediction, f"malformed response body: {e}")
-        except (KeyError, IndexError, TypeError) as e:
+        except (KeyError, IndexError, TypeError, AttributeError) as e:
             return self._fallback(prediction, f"unexpected response structure: {e}")
+
+        if not feedback:
+            return self._fallback(prediction, "unexpected response structure: no text "
+                                  f"(stop_reason={data.get('stop_reason')})")
 
         self.last_error = None
         return feedback
@@ -191,14 +211,11 @@ class StressFeedbackAgent:
 
 
 # ============================================================
-# DEMO / SIMULATION
+# AGENT ALONE: manually supplied label
 # ============================================================
 
 def simulate_pipeline(prediction: str):
-    """
-    Simulates the full pipeline:
-    HRV Model Prediction → Stress Feedback Agent → User Feedback
-    """
+    """Pass a manually supplied label to the agent and print its message."""
     print("=" * 60)
     print("  HRV STRESS DETECTION — FEEDBACK AGENT")
     print("=" * 60)
@@ -216,262 +233,86 @@ def simulate_pipeline(prediction: str):
 
 
 # ============================================================
-# INTEGRATION EXAMPLE — with live model object
+# FULL PIPELINE: Model G classifies a window, the agent gets the label
 # ============================================================
 
-def integrate_with_model(model, x_sample):
+def classify_window(csv_path: str, series_path: str, weights_path: str = DEFAULT_WEIGHTS,
+                    sample_index: int = 0, seed: int = 42):
     """
-    Example of how to integrate the feedback agent directly
-    with your trained Keras model from Models.py
+    Classify one test window of WESAD with Model G.
 
-    Args:
-        model: Your trained Keras model (e.g. Model D)
-        x_sample: A single reshaped HRV sample (1, 8, 1)
+    Reproduces the data selection, the stratified 80/20 split (seed 42) and the
+    normalisation of explain_model_g.py, so that sample_index refers to the same
+    test windows as the explainability analysis and the thesis.
 
     Returns:
-        prediction_label: "stress" or "no_stress"
-        feedback: Claude's feedback string
+        (label, probability, true_label, file) with label "stress" or "no_stress"
     """
+    # Deep learning imports stay here, so that the agent class above can be
+    # used without TensorFlow.
     import numpy as np
-
-    # Get model prediction
-    probability = model.predict(x_sample, verbose=0)[0][0]
-    prediction_label = "stress" if probability > 0.5 else "no_stress"
-    confidence = probability if probability > 0.5 else 1 - probability
-
-    print(f"Model confidence: {confidence:.1%} ({prediction_label})")
-
-    # Get feedback from agent
-    agent = StressFeedbackAgent()
-    feedback = agent.get_feedback(prediction_label)
-
-    return prediction_label, feedback
-
-
-# ============================================================
-# LOAD SAVED MODEL AND RUN
-# ============================================================
-
-def load_and_run(model_path: str, data_path: str, sample_index: int = 0):
-    """
-    Loads a saved .h5 model and runs the full pipeline on a sample
-    from your processed CSV — no retraining needed.
-
-    Args:
-        model_path:   Path to saved model, e.g. 'saved_models/used_model.h5'
-        data_path:    Path to your ProcessedECGData.csv
-        sample_index: Which test sample to run (default: 0 = first)
-
-    Usage:
-        python stress_feedback_agent.py --load_model saved_models/used_model.h5 \
-                                        --data /home/eduarda/Desktop/ProcessedECGData.csv \
-                                        --sample 0
-    """
-    import numpy as np
-    from tensorflow.keras.models import load_model
-    from Data import load_features, normalize_data
-
-    # ---- Load model ----
-    print(f"\nLoading model from: {model_path}")
-    try:
-        # custom_object_scope handles PositionalEncoding layer in Model D
-        from tensorflow.keras.utils import custom_object_scope
-        from Models import PositionalEncoding
-        with custom_object_scope({'PositionalEncoding': PositionalEncoding}):
-            model = load_model(model_path)
-        print("Model loaded successfully.")
-    except Exception as e:
-        print(f"[Error] Could not load model: {e}")
-        return
-
-    # ---- Load and preprocess data ----
-    print(f"Loading data from: {data_path}")
-    x_features, y_label, _ = load_features(data_path)
-
-    # Split exactly as in main.py to get the same test set
-    from sklearn.model_selection import train_test_split
-    x_train, x_test, y_train, y_test = train_test_split(
-        x_features, y_label,
-        test_size=0.2,
-        random_state=42,       # same seed as main.py — reproducible split
-        stratify=y_label
-    )
-
-    # Normalize using training set parameters (no data leakage)
-    x_train_norm, x_test_norm = normalize_data(x_train, x_test)
-
-    # Reshape to (samples, timesteps, channels)
-    nrows_test, ncols = x_test_norm.shape
-    x_test_reshape = x_test_norm.reshape(nrows_test, ncols, 1)
-
-    # ---- Select sample ----
-    if sample_index >= len(x_test_reshape):
-        print(f"[Error] sample_index {sample_index} out of range. Test set has {len(x_test_reshape)} samples.")
-        return
-
-    x_sample = x_test_reshape[sample_index:sample_index + 1]  # shape (1, 8, 1)
-    true_label = "stress" if y_test[sample_index] == 1 else "no_stress"
-
-    # ---- Predict ----
-    probability = model.predict(x_sample, verbose=0)[0][0]
-    prediction_label = "stress" if probability > 0.5 else "no_stress"
-    confidence = probability if probability > 0.5 else 1 - probability
-
-    # ---- Display prediction ----
-    print("\n" + "=" * 60)
-    print("  HRV STRESS DETECTION — FEEDBACK AGENT")
-    print("=" * 60)
-    print(f"  Sample index     : {sample_index}")
-    print(f"  True label       : {'🔴 STRESS' if true_label == 'stress' else '🟢 NO STRESS'}")
-    print(f"  Model prediction : {'🔴 STRESS' if prediction_label == 'stress' else '🟢 NO STRESS'}")
-    print(f"  Confidence       : {confidence:.1%}")
-    print(f"  Correct          : {'✅ Yes' if prediction_label == true_label else '❌ No'}")
-    print("=" * 60)
-
-    # ---- Get feedback from Claude ----
-    print("\n  Generating wellness feedback...\n")
-    agent = StressFeedbackAgent()
-    feedback = agent.get_feedback(prediction_label)
-
-    print("  WELLNESS FEEDBACK:")
-    print("-" * 60)
-    print(feedback)
-    print("=" * 60)
-
-    return prediction_label, confidence, feedback
-
-
-# ============================================================
-# LOAD SAVED MODEL AND RUN
-# ============================================================
-
-def load_and_run(model_path: str, data_path: str, sample_index: int = 0):
-    """
-    Load the saved Model D from .h5 file, preprocess a sample
-    from the CSV, run prediction, and get feedback.
-
-    This replicates the exact same preprocessing pipeline from
-    Data.py and main.py so results are consistent with training.
-
-    Args:
-        model_path:   Path to saved model, e.g. 'saved_models/used_model.h5'
-        data_path:    Path to ProcessedECGData.csv
-        sample_index: Which test sample to run (default: 0 = first)
-    """
-    import tensorflow as tf
-    from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import StandardScaler
     import pandas as pd
+    from sklearn.model_selection import train_test_split
+    from train_sequence import FEATURES, build
 
-    print("=" * 60)
-    print("  LOADING SAVED MODEL")
-    print("=" * 60)
+    raw = pd.read_csv(csv_path)
+    nni = np.load(series_path)["nni"]
+    if len(raw) != len(nni):
+        raise SystemExit(f"CSV has {len(raw)} rows but the series file has {len(nni)}")
+    keep = raw[FEATURES + ["label"]].notna().all(axis=1).to_numpy()
+    keep &= raw["file"].str.contains("ECG_values").to_numpy()          # WESAD only
+    raw, nni = raw[keep].reset_index(drop=True), nni[keep]
+    x = raw[FEATURES].to_numpy(float)
+    y = raw["label"].to_numpy().astype(int)
 
-    # ---- 1. Load saved model ----
-    # PositionalEncoding is a custom layer defined in Models.py
-    # We must redefine it here so Keras can deserialize the .h5 file
-    class PositionalEncoding(tf.keras.layers.Layer):
-        def __init__(self, d_model, max_len=100, **kwargs):
-            super(PositionalEncoding, self).__init__(**kwargs)
-            self.d_model = d_model
-            self.max_len = max_len
+    itr, ite = train_test_split(np.arange(len(y)), test_size=0.2,
+                                random_state=seed, stratify=y)
+    if not 0 <= sample_index < len(ite):
+        raise SystemExit(f"--sample must be between 0 and {len(ite) - 1}")
+    i = ite[sample_index]
 
-        def build(self, input_shape):
-            position = np.arange(self.max_len)[:, np.newaxis]
-            div_term = np.exp(
-                np.arange(0, self.d_model, 2) * -(np.log(10000.0) / self.d_model)
-            )
-            pos_encoding = np.zeros((self.max_len, self.d_model))
-            pos_encoding[:, 0::2] = np.sin(position * div_term)
-            pos_encoding[:, 1::2] = np.cos(position * div_term)
-            self.pos_encoding = tf.constant(
-                pos_encoding[np.newaxis, :, :], dtype=tf.float32
-            )
+    # Normalisation fitted on the training windows only
+    real = nni[itr] > 0
+    mu, sd = nni[itr][real].mean(), nni[itr][real].std()
+    fmu, fsd = x[itr].mean(0), x[itr].std(0)
+    s = np.where(nni[i] > 0, (nni[i] - mu) / sd, 0.0)[None, :, None].astype("float32")
+    k = (nni[i] > 0).astype("float32")[None, :, None]
+    f = np.clip((x[i] - fmu) / fsd, -5, 5)[None, :].astype("float32")
 
-        def call(self, x):
-            seq_len = tf.shape(x)[1]
-            return x + self.pos_encoding[:, :seq_len, :]
+    model = build("both", nni.shape[1], len(FEATURES))
+    model.load_weights(weights_path)
+    probability = float(model([s, k, f], training=False).numpy()[0, 0])
 
-        def get_config(self):
-            config = super().get_config()
-            config.update({"d_model": self.d_model, "max_len": self.max_len})
-            return config
+    label = "stress" if probability > 0.5 else "no_stress"
+    true_label = "stress" if y[i] == 1 else "no_stress"
+    return label, probability, true_label, raw["file"].iloc[i]
 
-    print(f"\n  Loading model from: {model_path}")
-    model = tf.keras.models.load_model(
-        model_path,
-        custom_objects={"PositionalEncoding": PositionalEncoding}
-    )
-    print("  Model loaded successfully!")
-    model.summary()
 
-    # ---- 2. Load and preprocess data (mirrors Data.py exactly) ----
-    print(f"\n  Loading data from: {data_path}")
-    data = pd.read_csv(data_path)
-    data = data.dropna(subset=[data.columns[1]])
-    data = data.dropna(subset=data.columns[2:10])
-
-    x_features = data.iloc[:, 2:10].to_numpy()
-    y_label    = data.iloc[:, 1].to_numpy()
-
-    print(f"  Loaded {len(x_features)} samples")
-
-    # ---- 3. Replicate train/test split from main.py ----
-    # Same random_state=42 and stratify as during training
-    x_train, x_test, y_train, y_test = train_test_split(
-        x_features, y_label,
-        test_size=0.2,
-        random_state=42,
-        stratify=y_label
-    )
-
-    # ---- 4. Replicate normalization from Data.py ----
-    Q1 = np.percentile(x_train, 25, axis=0)
-    Q3 = np.percentile(x_train, 75, axis=0)
-    IQR = Q3 - Q1
-    lower_bound = Q1 - 3 * IQR
-    upper_bound = Q3 + 3 * IQR
-
-    x_train_clipped = np.clip(x_train, lower_bound, upper_bound)
-    x_test_clipped  = np.clip(x_test,  lower_bound, upper_bound)
-
-    scaler = StandardScaler()
-    x_train_norm = scaler.fit_transform(x_train_clipped)
-    x_test_norm  = scaler.transform(x_test_clipped)
-
-    x_train_norm = np.clip(x_train_norm, -5, 5)
-    x_test_norm  = np.clip(x_test_norm,  -5, 5)
-
-    # ---- 5. Reshape to (samples, timesteps, channels) ----
-    ncols = x_test_norm.shape[1]  # 8 features
-    x_test_reshape = x_test_norm.reshape(x_test_norm.shape[0], ncols, 1)
-
-    # ---- 6. Pick sample and predict ----
-    sample_index = min(sample_index, len(x_test_reshape) - 1)
-    x_sample  = x_test_reshape[sample_index:sample_index + 1]  # shape (1, 8, 1)
-    true_label = int(y_test[sample_index])
-
-    probability = model.predict(x_sample, verbose=0)[0][0]
-    predicted   = "stress" if probability > 0.5 else "no_stress"
-    confidence  = probability if probability > 0.5 else 1 - probability
-
-    print(f"\n  Sample index    : {sample_index}")
-    print(f"  True label      : {'Stress' if true_label == 1 else 'No Stress'}")
-    print(f"  Predicted       : {'🔴 STRESS' if predicted == 'stress' else '🟢 NO STRESS'}")
-    print(f"  Confidence      : {confidence:.1%}")
-
-    # ---- 7. Get feedback from agent ----
-    print("\n  Fetching feedback from Claude API...")
-    agent = StressFeedbackAgent()
-    feedback = agent.get_feedback(predicted)
+def load_and_run(csv_path: str, series_path: str, weights_path: str = DEFAULT_WEIGHTS,
+                 sample_index: int = 0):
+    """Classify one window with Model G and pass only its label to the agent."""
+    label, probability, true_label, file = classify_window(
+        csv_path, series_path, weights_path, sample_index)
 
     print("\n" + "=" * 60)
+    print("  HRV STRESS DETECTION — FEEDBACK AGENT (Model G)")
+    print("=" * 60)
+    print(f"  Test window      : {sample_index} ({file})")
+    print(f"  True label       : {'🔴 STRESS' if true_label == 'stress' else '🟢 NO STRESS'}")
+    print(f"  Model prediction : {'🔴 STRESS' if label == 'stress' else '🟢 NO STRESS'}")
+    print(f"  P(stress)        : {probability:.3f}")
+    print("=" * 60)
+
+    # Only the label crosses to the agent
+    print("\n  Generating wellness feedback...\n")
+    feedback = StressFeedbackAgent().get_feedback(label)
+
     print("  WELLNESS FEEDBACK:")
     print("-" * 60)
     print(feedback)
     print("=" * 60)
 
-    return predicted, confidence, feedback
+    return label, probability, feedback
 
 
 # ============================================================
@@ -492,34 +333,21 @@ if __name__ == "__main__":
         help="Manually specify prediction: 'stress' or 'no_stress'"
     )
 
-    # Option B: load saved model + CSV
-    parser.add_argument(
-        "--model",
-        type=str,
-        default=None,
-        help="Path to saved .h5 model, e.g. 'saved_models/used_model.h5'"
-    )
-    parser.add_argument(
-        "--data",
-        type=str,
-        default=None,
-        help="Path to ProcessedECGData.csv"
-    )
-    parser.add_argument(
-        "--sample",
-        type=int,
-        default=0,
-        help="Index of test sample to predict on (default: 0)"
-    )
+    # Option B: Model G classifies a window of WESAD
+    parser.add_argument("--csv", default=None,
+                        help="Processed WESAD features (ProcessedECGData_v6_wesad.csv)")
+    parser.add_argument("--series", default=None,
+                        help="NN-interval series aligned with the CSV (NNSeries_v6_wesad.npz)")
+    parser.add_argument("--weights", default=DEFAULT_WEIGHTS,
+                        help="Model G weights (default: saved_models/wesad_model_G_v6.weights.h5)")
+    parser.add_argument("--sample", type=int, default=0,
+                        help="Index of the test window, as in the explainability analysis (default: 0)")
 
     args = parser.parse_args()
 
-    # Route to correct mode
-    if args.model and args.data:
-        # Load saved model and run on real data
-        load_and_run(args.model, args.data, args.sample)
+    if args.csv and args.series:
+        load_and_run(args.csv, args.series, args.weights, args.sample)
     elif args.prediction:
-        # Manual prediction mode
         simulate_pipeline(args.prediction)
     else:
-        parser.error("Provide either --prediction OR both --model and --data")
+        parser.error("Provide either --prediction, or both --csv and --series")

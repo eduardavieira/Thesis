@@ -4,7 +4,7 @@ Regenera as Tabelas A.1 e A.2 do apendice (duracao do ECG por participante e
 condicao) com as duracoes reais (amostras / fs) do time_duration_v6.csv.
 
     python3 appendix_tables.py --tex .../appendices/SupportWork.tex \
-        --durations "../Data Processing/time_duration_v6.csv" --out ../drafts/appendix_tables_v6.tex
+        --durations "../Data Processing/time_duration_v6.csv" --out appendix_tables_v6.tex
 
 Le as duas tabelas do SupportWork.tex tal como estao e substitui so os valores
 de duracao e os totais, mantendo a formatacao. As duracoes antigas vinham do
