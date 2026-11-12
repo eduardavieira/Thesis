@@ -290,8 +290,8 @@ balanced weights.
 ## Installation
 
 ```bash
-git clone https://github.com/eduardavieira/Thesis.git
-cd Thesis
+git clone https://github.com/dmlrhaslab/HRV-Stress.git
+cd HRV-Stress
 pip install tensorflow==2.13.1 scikit-learn pandas numpy scipy matplotlib \
             biosppy pyhrv requests
 ```
